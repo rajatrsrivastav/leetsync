@@ -1,0 +1,23 @@
+{
+  "verifiedAt": "2026-10-08",
+  "curriculumSource": "https://takeuforward.org/prep-hub/strivers-180-master-dsa-patterns?page=sheet",
+  "verificationMethod": "Expanded all public sheet modules in a browser; extracted only rendered navigation metadata. All 179 normalized records were compared with the local dataset using an identical FNV-1a fingerprint before applying the independently verified LeetCode redirect below.",
+  "normalizedSheetMetadataFNV1a32": "d5783ffb",
+  "problemCount": 179,
+  "moduleCount": 17,
+  "difficultySource": "https://leetcode.com/api/problems/all/",
+  "difficultyMethod": "Exact matching against LeetCode's public question__title_slug field. Numeric levels 1, 2, 3 map to Easy, Medium, Hard; spot-checked against the public Majority Element, Koko Eating Bananas, and Trapping Rain Water pages. 145 LeetCode rows matched. No difficulty assigned to 34 TakeUForward practice rows.",
+  "normalizations": [
+    "Trimmed leading and trailing whitespace from problem titles.",
+    "Used each row's public TakeUForward practice URL when no external LeetCode problem link was present.",
+    "Used the TakeUForward practice URL for order 124 (undirected cycle detection), because its external Course Schedule link is for directed graphs.",
+    "Used the TakeUForward practice URLs for orders 130 (Kosaraju) and 171 (Rabin Karp), because the external links target LeetCode discussion/solution posts rather than problem pages.",
+    "Order 173: the official sheet's https://leetcode.com/problems/implement-strstr/ redirects to https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string/. Stored the verified canonical URL/slug for content-script tracking."
+  ],
+  "limitations": [
+    "Some LeetCode problems require a paid account. The extension does not bypass access controls.",
+    "The official sheet links to related variants for some topics; curriculum titles retain the official sheet wording, not the destination platform title.",
+    "Some problems appear under multiple patterns (for example Subsets at orders 40 and 175). Their curriculum IDs and progress remain separate.",
+    "The 34 non-LeetCode problems support navigation and manual progress only in V1."
+  ]
+}

@@ -1,0 +1,10 @@
+node_modules/
+.output/
+.wxt/
+.pnpm-store/
+.env*
+!.env.example
+coverage/
+*.log
+.DS_Store
+test-results/

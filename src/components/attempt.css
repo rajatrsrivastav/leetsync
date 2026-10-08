@@ -1,0 +1,635 @@
+.dsacommit-surface {
+  --attempt-bg: #131917;
+  --attempt-subtle: #1c2420;
+  --attempt-border: #303a33;
+  --attempt-text: #eef2eb;
+  --attempt-muted: #9aa69d;
+  --attempt-accent: #c1ef82;
+  --attempt-ink: #18240b;
+  color-scheme: dark;
+  color: var(--attempt-text);
+  font:
+    13px/1.5 Inter,
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  background: var(--attempt-bg);
+  box-sizing: border-box;
+  text-align: left;
+}
+.dsacommit-surface[data-theme='light'] {
+  --attempt-bg: #fffef9;
+  --attempt-subtle: #f1f3eb;
+  --attempt-border: #dce2d5;
+  --attempt-text: #20291f;
+  --attempt-muted: #64705f;
+  --attempt-accent: #d0ee9f;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+  .dsacommit-surface[data-theme='system'] {
+    --attempt-bg: #fffef9;
+    --attempt-subtle: #f1f3eb;
+    --attempt-border: #dce2d5;
+    --attempt-text: #20291f;
+    --attempt-muted: #64705f;
+    --attempt-accent: #d0ee9f;
+    color-scheme: light;
+  }
+}
+.dsacommit-surface *,
+.dsacommit-surface *::before,
+.dsacommit-surface *::after {
+  box-sizing: border-box;
+}
+.dsacommit-surface button,
+.dsacommit-surface input,
+.dsacommit-surface textarea {
+  font: inherit;
+}
+.dsacommit-surface button {
+  cursor: pointer;
+}
+.dsacommit-surface button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.dsacommit-surface button:focus-visible,
+.dsacommit-surface a:focus-visible,
+.dsacommit-surface summary:focus-visible,
+.dsacommit-surface input:focus-visible,
+.dsacommit-surface textarea:focus-visible {
+  outline: 2px solid var(--attempt-accent);
+  outline-offset: 3px;
+}
+.dsacommit-surface h2,
+.dsacommit-surface h3,
+.dsacommit-surface p {
+  margin: 0;
+}
+.dsacommit-surface .attempt-panel,
+.dsacommit-surface.attempt-panel,
+.dsacommit-surface.reflection-panel {
+  padding: 22px;
+}
+.dsacommit-surface .attempt-eyebrow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--attempt-muted);
+}
+.dsacommit-surface .attempt-title {
+  margin: 10px 0;
+  font-size: 23px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.6px;
+  text-wrap: balance;
+}
+.dsacommit-surface .attempt-badges {
+  display: flex;
+  gap: 8px;
+  color: var(--attempt-muted);
+  font-size: 11px;
+}
+.dsacommit-surface .attempt-badges span {
+  border: 1px solid var(--attempt-border);
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+.dsacommit-surface .attempt-difficulty-easy {
+  color: #72bd93;
+}
+.dsacommit-surface .attempt-difficulty-medium {
+  color: #cca95e;
+}
+.dsacommit-surface .attempt-difficulty-hard {
+  color: #d78e87;
+}
+.dsacommit-surface .attempt-pattern {
+  margin-top: 10px;
+  color: var(--attempt-muted);
+  font-size: 12px;
+}
+.dsacommit-surface .attempt-timer {
+  padding: 22px 0 20px;
+}
+.dsacommit-surface .attempt-timer > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--attempt-muted);
+}
+.dsacommit-surface .attempt-timer.is-running > div {
+  color: var(--attempt-accent);
+}
+.dsacommit-surface .attempt-timer output {
+  display: block;
+  font-size: 43px;
+  line-height: 1.35;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1.5px;
+}
+.dsacommit-surface .attempt-primary,
+.dsacommit-surface .attempt-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 39px;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+.dsacommit-surface .attempt-primary {
+  width: 100%;
+  background: var(--attempt-accent);
+  color: var(--attempt-ink);
+}
+.dsacommit-surface .attempt-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.dsacommit-surface .attempt-secondary {
+  background: var(--attempt-subtle);
+  color: var(--attempt-text);
+  border-color: var(--attempt-border);
+  font-size: 12px;
+}
+.dsacommit-surface .attempt-secondary:hover:not(:disabled) {
+  border-color: var(--attempt-muted);
+}
+.dsacommit-surface .attempt-counters {
+  display: flex;
+  justify-content: space-between;
+  margin: 15px 0 10px;
+  color: var(--attempt-muted);
+  font-size: 11px;
+}
+.dsacommit-surface .attempt-tools {
+  display: flex;
+  gap: 8px;
+}
+.dsacommit-surface .attempt-tools > * {
+  flex: 1;
+}
+.dsacommit-surface .attempt-help,
+.dsacommit-surface .attempt-manual {
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid var(--attempt-border);
+}
+.dsacommit-surface summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 550;
+}
+.dsacommit-surface .attempt-help-levels {
+  display: flex;
+  gap: 6px;
+  margin: 9px 0;
+}
+.dsacommit-surface .attempt-help-levels button {
+  font-size: 10px;
+  min-height: 31px;
+  padding: 5px 8px;
+}
+.dsacommit-surface .attempt-help p,
+.dsacommit-surface .attempt-help li {
+  font-size: 12px;
+}
+.dsacommit-surface .attempt-help ul {
+  margin: 9px 0;
+  padding-left: 19px;
+}
+.dsacommit-surface .attempt-help li + li {
+  margin-top: 5px;
+}
+.dsacommit-surface .attempt-fineprint {
+  margin: 8px 0;
+  color: var(--attempt-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.dsacommit-surface .attempt-flags {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--attempt-muted);
+}
+.dsacommit-surface .attempt-link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--attempt-muted);
+  text-align: left;
+  font-size: 11px;
+}
+.dsacommit-surface .attempt-link-button:hover {
+  color: var(--attempt-text);
+}
+.dsacommit-surface .attempt-reset {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--attempt-muted);
+}
+.dsacommit-surface .attempt-reset p {
+  margin-bottom: 7px;
+}
+.dsacommit-surface .attempt-today {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 21px;
+  padding-top: 16px;
+  border-top: 1px solid var(--attempt-border);
+}
+.dsacommit-surface .attempt-today > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+.dsacommit-surface .attempt-today > div > span {
+  color: var(--attempt-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+.dsacommit-surface .attempt-today strong {
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+.dsacommit-surface .attempt-today strong span {
+  color: var(--attempt-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.dsacommit-surface progress {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: 5px;
+  border: 0;
+  background: var(--attempt-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.dsacommit-surface progress::-webkit-progress-bar {
+  background: var(--attempt-subtle);
+}
+.dsacommit-surface progress::-webkit-progress-value {
+  background: var(--attempt-accent);
+  border-radius: 4px;
+}
+.dsacommit-surface progress::-moz-progress-bar {
+  background: var(--attempt-accent);
+}
+.dsacommit-surface .attempt-completed {
+  padding-top: 20px;
+}
+.dsacommit-surface .attempt-completed > svg {
+  color: var(--attempt-accent);
+  margin-bottom: 7px;
+}
+.dsacommit-surface .attempt-completed h3 {
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+.dsacommit-surface .attempt-completed p {
+  font-size: 12px;
+  color: var(--attempt-muted);
+}
+.dsacommit-surface .attempt-sync {
+  margin: 11px 0;
+}
+.dsacommit-surface .attempt-text-link {
+  color: var(--attempt-accent);
+  font-size: 12px;
+}
+.dsacommit-surface .attempt-goal-done {
+  background: var(--attempt-subtle);
+  padding: 12px;
+  margin: 16px 0;
+  border-radius: 8px;
+  color: var(--attempt-accent);
+  font-size: 12px;
+}
+.dsacommit-surface .attempt-next {
+  border-top: 1px solid var(--attempt-border);
+  padding-top: 15px;
+  margin-top: 16px;
+}
+.dsacommit-surface .attempt-next > span {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--attempt-muted);
+}
+.dsacommit-surface .attempt-next > strong {
+  display: block;
+  font-size: 15px;
+  margin: 5px 0 12px;
+}
+.dsacommit-surface .attempt-completed > .attempt-secondary {
+  margin-top: 10px;
+  width: 100%;
+}
+.dsacommit-surface .reflection-kicker {
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  font-weight: 650;
+  color: var(--attempt-accent);
+  margin-bottom: 8px;
+}
+.dsacommit-surface.reflection-panel h2 {
+  font-size: 23px;
+  line-height: 1.22;
+  letter-spacing: -0.6px;
+  font-weight: 600;
+  margin-bottom: 9px;
+}
+.dsacommit-surface .reflection-muted {
+  color: var(--attempt-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.dsacommit-surface .reflection-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+  border-block: 1px solid var(--attempt-border);
+  margin: 18px 0;
+  padding: 14px 0;
+}
+.dsacommit-surface .reflection-stats dt {
+  font-size: 10px;
+  color: var(--attempt-muted);
+  margin-bottom: 3px;
+}
+.dsacommit-surface .reflection-stats dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.dsacommit-surface .reflection-form {
+  display: grid;
+  gap: 15px;
+}
+.dsacommit-surface .reflection-confidence {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.dsacommit-surface .reflection-confidence legend {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 9px;
+}
+.dsacommit-surface .reflection-confidence legend span {
+  font-weight: 400;
+  color: var(--attempt-muted);
+  font-size: 10px;
+  margin-left: 5px;
+}
+.dsacommit-surface .reflection-choice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--attempt-border);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 7px;
+  cursor: pointer;
+}
+.dsacommit-surface .reflection-choice.is-selected {
+  border-color: var(--attempt-accent);
+  background: var(--attempt-subtle);
+}
+.dsacommit-surface .reflection-choice input {
+  appearance: auto;
+  accent-color: var(--attempt-accent);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+.dsacommit-surface .reflection-choice strong {
+  display: block;
+  font-size: 12px;
+}
+.dsacommit-surface .reflection-choice small {
+  display: block;
+  color: var(--attempt-muted);
+  font-size: 10px;
+  margin-top: 2px;
+}
+.dsacommit-surface .reflection-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--attempt-text);
+  font-size: 11px;
+  font-weight: 550;
+}
+.dsacommit-surface .reflection-field input,
+.dsacommit-surface .reflection-field textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--attempt-border);
+  border-radius: 7px;
+  background: var(--attempt-subtle);
+  color: var(--attempt-text);
+  padding: 9px 10px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.dsacommit-surface .reflection-field textarea {
+  resize: vertical;
+}
+.dsacommit-surface .reflection-field input::placeholder,
+.dsacommit-surface .reflection-field textarea::placeholder {
+  color: var(--attempt-muted);
+  opacity: 0.7;
+}
+.dsacommit-surface .reflection-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.dsacommit-surface .reflection-code {
+  border-top: 1px solid var(--attempt-border);
+  padding-top: 13px;
+}
+.dsacommit-surface .reflection-code > p,
+.dsacommit-surface .reflection-code > label {
+  margin-top: 10px;
+}
+.dsacommit-surface .reflection-field .reflection-source {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  tab-size: 4;
+}
+.dsacommit-surface .reflection-footnote {
+  text-align: center;
+  color: var(--attempt-muted);
+  font-size: 10px;
+}
+.dsacommit-widget {
+  position: fixed;
+  z-index: 2147483600;
+  bottom: 20px;
+  right: 20px;
+  width: 352px;
+  max-width: calc(100vw - 24px);
+  border: 1px solid var(--attempt-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 18px 64px #0005;
+  transition:
+    width 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.dsacommit-widget.is-collapsed {
+  width: auto;
+  min-width: 270px;
+  max-width: 420px;
+  box-shadow: 0 8px 32px #0004;
+}
+.dsacommit-surface .attempt-widget-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 17px;
+  border-bottom: 1px solid var(--attempt-border);
+  transition: background 0.15s ease;
+}
+.dsacommit-widget.is-collapsed .attempt-widget-header {
+  border-bottom: 0;
+}
+.dsacommit-widget.is-collapsed .attempt-widget-header:hover {
+  background: var(--attempt-subtle);
+}
+.dsacommit-surface .attempt-widget-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.dsacommit-surface .attempt-widget-brand svg {
+  color: var(--attempt-accent);
+}
+.dsacommit-surface .attempt-widget-collapsed-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  background: var(--attempt-subtle);
+  border: 1px solid var(--attempt-border);
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--attempt-text);
+}
+.dsacommit-surface .attempt-widget-collapsed-tag {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--attempt-muted);
+}
+.dsacommit-surface .attempt-widget-collapsed-tag.is-active {
+  color: var(--attempt-accent);
+  font-weight: 600;
+}
+.dsacommit-surface .attempt-widget-collapsed-tag.is-accepted {
+  color: #72bd93;
+  font-weight: 600;
+}
+.dsacommit-surface .attempt-widget-header > a,
+.dsacommit-surface .attempt-widget-dashboard-btn {
+  margin-left: auto;
+  color: var(--attempt-muted);
+  font-size: 10px;
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+.dsacommit-surface .attempt-widget-header > a:hover,
+.dsacommit-surface .attempt-widget-dashboard-btn:hover {
+  color: var(--attempt-text);
+  background: var(--attempt-subtle);
+}
+.dsacommit-surface .attempt-widget-toggle {
+  border: 0;
+  background: transparent;
+  color: var(--attempt-muted);
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.dsacommit-surface .attempt-widget-toggle:hover:not(:disabled) {
+  background: var(--attempt-subtle);
+  color: var(--attempt-text);
+}
+.dsacommit-surface .attempt-widget-body {
+  max-height: min(80vh, 800px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.dsacommit-surface .attempt-widget-message {
+  padding: 20px;
+}
+.dsacommit-surface .attempt-widget-message p {
+  margin: 8px 0 16px;
+  color: var(--attempt-muted);
+  font-size: 12px;
+}
+.dsacommit-surface .attempt-widget-error {
+  padding: 10px 17px;
+  background: #673528;
+  color: #ffded5;
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .dsacommit-widget {
+    right: 12px;
+    bottom: 12px;
+    width: 330px;
+  }
+  .dsacommit-surface .attempt-widget-body {
+    max-height: 72vh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dsacommit-surface * {
+    scroll-behavior: auto;
+  }
+}
