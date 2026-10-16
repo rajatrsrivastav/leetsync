@@ -4,30 +4,37 @@ A local-first **campus placement preparation companion** for Chrome and Edge, bu
 
 **Check progress → open a resource → study → record progress → continue.** No account, backend, telemetry, or AI service is required. Existing DSA data is preserved.
 
-## Preparation tracking workspace
+## Daily preparation roadmap
 
-The main dashboard focuses on **how much you have prepared, what is pending, and where to continue**. It contains no embedded lessons or MCQ interfaces.
+The Campus preparation dashboard is an **actionable daily plan**, not a resource directory. Each day shows your unchanged **two Striver DSA problems** plus **one focused extra task** drawn from a 64-topic roadmap that rotates through Operating Systems, DBMS & SQL, Computer Networks, OOP, System Design (HLD), Low-Level Design, aptitude, and interview preparation, eight topics per track from Foundation to Advanced.
 
-- **Progress:** daily DSA goal and streak, solved / 179, independent/assisted/relearn attempt counts, average time across timed completed solves, revision backlog, topic mastery, and the last 7/30 days of preparation activity.
-- **Subject tracking:** explicitly recorded completed/in-progress topics across Core CS, System Design, aptitude, interviews, and other preparation subjects. Previous study topics remain visible separately. External resources have no invented completion percentage.
-- **Resources:** nine curated destinations with Open Resource, Mark Progress, Resume Learning, and bookmarks. Links open the original site in a new tab. Resume opens the resource with your last studied topic shown on its card; the extension does not inspect external browsing or infer a deep-link position.
-- **Manual study records:** topic, subject, explicit completion, and optional minutes. Repeated records contribute study time, while topic counts use the latest status for the same resource/subject/topic. Opening a link records only a visit; it never completes a topic, solves a DSA problem, or extends a DSA streak.
+Every extra task has four parts:
+
+1. **Study** — one topic for 20–30 minutes with a deep link to the exact section, chapter, or page of a verified source (for example OSTEP chapter PDFs, Core CS Interview Prep sections, System Design Primer anchors, AlgoMaster articles, PostgreSQL docs, IndiaBIX formula pages, Tech Interview Handbook sections).
+2. **Practice** — one matching exercise with a direct link: LeetCode concurrency/SQL/design problems, HackerRank SQL challenges, System Design Primer and AlgoMaster design exercises (URL shortener, load balancer, key-value store, web crawler), Awesome Low-Level Design machine-coding problems (Tic Tac Toe, Parking Lot, Vending Machine, LRU Cache, Pub/Sub, Elevator, Splitwise), refactoring katas, aptitude question sets, and interview-practice prompts. Theory topics use explanation prompts checked against real interview questions; no unrelated problems are forced.
+3. **Complete** — record understanding (independent / with some support / needs work), practice result, minutes, and notes. **Mark completed** schedules a spaced review (7, 14, 28… days, 3 days after a supported completion); **Need revision** brings the topic back tomorrow. Drafts save partial progress.
+4. **Next** — the following topic is shown; the **Upcoming** tab projects the next ten tasks and due reviews.
+
+Layout: **Today / Upcoming / Progress / Resource Library**. Progress shows DSA stats, per-track completion, study activity, and history. The library keeps the ten curated sources plus a browsable topic roadmap with bookmarks.
+
+- Daily assignments, outcomes, drafts, bookmarks, and reviews persist in local storage and backups. An unfinished task is resumed on later days under its original id; nothing is auto-completed.
+- Opening a link records nothing. The extension guides you to the original source and expects independent practice; it bundles no lessons, quizzes, answers, or AI-generated content.
+- All DSA workflows and historical data (attempts, queues, streaks, revisions, GitHub sync, previous lesson sessions and quiz results, manual resource entries) are unchanged.
 
 | Area                  | Resource                                                                                                                                    |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | DSA                   | [Striver's sheet](https://takeuforward.org/prep-hub/strivers-180-master-dsa-patterns)                                                       |
 | DSA concepts/patterns | [Awesome LeetCode Resources](https://github.com/ashishps1/awesome-leetcode-resources)                                                       |
+| Core CS questions     | [Core CS Interview Prep](https://github.com/kratos0718/core-cs-interview-prep) — OS, DBMS, SQL, networks, OOP sections                      |
 | Core CS               | [CS Fundamentals for Interviews](https://github.com/aashishbharti04/cs-fundamentals-for-interviews)                                         |
 | HLD — Primary         | [Awesome System Design Resources](https://github.com/ashishps1/awesome-system-design-resources)                                             |
 | HLD — Additional      | [System Design Primer](https://github.com/donnemartin/system-design-primer)                                                                 |
 | LLD/OOD               | [Awesome Low Level Design](https://github.com/ashishps1/awesome-low-level-design)                                                           |
-| Aptitude              | [IndiaBIX](https://www.indiabix.com/aptitude/)                                                                                              |
-| Interview preparation | [Tech Interview Handbook](https://github.com/yangshun/tech-interview-handbook)                                                              |
+| Aptitude              | [IndiaBIX](https://www.indiabix.com/aptitude/questions-and-answers/)                                                                        |
+| Interview preparation | [Tech Interview Handbook](https://www.techinterviewhandbook.org/software-engineering-interview-guide/)                                      |
 | Company questions     | [Company-wise questions](https://github.com/snehasishroy/leetcode-companywise-interview-questions) — July 2026 snapshot, not live frequency |
 
-All nine original destinations were checked on October 17, 2026. Content and availability may change.
-
-**Existing data is preserved.** The additive resource-tracking namespace leaves previous lesson sessions, quiz answers/results, reflections, plans, timers, and revision dates intact. Previous study history remains readable and included in backups; an existing active timer can be paused. No old answers are converted into unverified external completions. Bookmarks, resource visits, and study records survive reloads/restarts and backup export/import. The DSA popup, daily two-question queue, Accepted capture, GitHub sync, and revision workflows remain unchanged. No AI provider or external analysis request is added.
+Every roadmap link and source destination was opened on October 17, 2026 (GitHub section anchors were derived from the files' headings on that date). Content and availability may change; the catalog in `src/features/preparation/roadmap/topics.ts` records the verification date.
 
 ## Run locally
 

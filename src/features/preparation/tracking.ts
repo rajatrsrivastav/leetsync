@@ -13,23 +13,30 @@ export function latestResourceTopics(entries: ResourceProgressEntry[]): Resource
   }
   return [...latest.values()];
 }
+/** Daily counts of DSA solves plus recorded study: roadmap outcomes, resource entries, old sessions. */
 export function preparationActivity(state: AppState, days: number, now = new Date()) {
+  const prep = state.preparation;
   return Array.from({ length: days }, (_, i) => {
     const date = localDate(addLocalDays(now, i - days + 1));
-    const studies = Object.values(state.preparation?.sessions ?? {}).filter(
+    const studies = Object.values(prep?.sessions ?? {}).filter(
       (s) =>
         s.completedAt && s.status === 'completed' && localDate(new Date(s.completedAt)) === date,
     );
-    const logs = Object.values(state.preparation?.resourceTracking?.entries ?? {}).filter(
+    const logs = Object.values(prep?.resourceTracking?.entries ?? {}).filter(
       (e) => localDate(new Date(e.studiedAt)) === date,
+    );
+    const tasks = Object.values(prep?.roadmap?.responses ?? {}).filter(
+      (r) => r.status !== 'draft' && localDate(new Date(r.recordedAt)) === date,
     );
     const solves = new Set(state.activities[date]?.problemIds ?? []).size;
     return {
       date,
       solves,
-      studies: studies.length + logs.length,
+      tasks: tasks.length,
+      studies: studies.length + logs.length + tasks.length,
       minutes:
         logs.reduce((n, e) => n + e.minutes, 0) +
+        tasks.reduce((n, r) => n + r.minutes, 0) +
         Math.floor(studies.reduce((n, s) => n + s.seconds, 0) / 60),
     };
   });

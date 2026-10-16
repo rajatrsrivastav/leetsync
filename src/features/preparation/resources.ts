@@ -29,6 +29,15 @@ export const trackedResources: TrackedResource[] = [
     description: 'A collection of coding interview concepts and practice resources.',
   },
   {
+    id: 'core-cs-questions',
+    title: 'Core CS Interview Prep — 500 questions',
+    group: 'Core CS',
+    subjects: ['os', 'dbms', 'networks', 'oop', 'sql'],
+    url: 'https://github.com/kratos0718/core-cs-interview-prep',
+    description:
+      'OS, DBMS, SQL, networks, and OOP interview questions with explained answers, ordered basic to advanced. The roadmap links straight into its sections.',
+  },
+  {
     id: 'core-cs',
     title: 'Core CS interview fundamentals',
     group: 'Core CS',
@@ -39,43 +48,48 @@ export const trackedResources: TrackedResource[] = [
   },
   {
     id: 'hld-primary',
-    title: 'HLD — Primary',
+    title: 'Awesome System Design Resources',
     group: 'System Design',
     subjects: ['system'],
     url: 'https://github.com/ashishps1/awesome-system-design-resources',
-    description: 'System design concepts and interview preparation resources.',
+    description:
+      'Concept articles, trade-offs, and graded design problems. Roadmap design exercises link to its problem pages.',
   },
   {
     id: 'hld-additional',
-    title: 'HLD — Additional',
+    title: 'System Design Primer',
     group: 'System Design',
     subjects: ['system'],
     url: 'https://github.com/donnemartin/system-design-primer',
-    description: 'The System Design Primer: large-scale systems and design practice.',
+    description:
+      'Large-scale system topics with worked design exercises such as Pastebin, Twitter, and a web crawler.',
   },
   {
     id: 'lld',
-    title: 'LLD / Object-oriented design',
+    title: 'Awesome Low-Level Design',
     group: 'System Design',
     subjects: ['system', 'oop'],
     url: 'https://github.com/ashishps1/awesome-low-level-design',
-    description: 'Low-level design, object-oriented design, and design patterns.',
+    description:
+      'OOP fundamentals, design patterns, UML, concurrency, and machine-coding problems with requirements and reference solutions.',
   },
   {
     id: 'aptitude',
     title: 'Aptitude practice',
     group: 'Aptitude',
     subjects: ['aptitude'],
-    url: 'https://www.indiabix.com/aptitude/',
-    description: 'Quantitative aptitude questions and practice on IndiaBIX.',
+    url: 'https://www.indiabix.com/aptitude/questions-and-answers/',
+    description:
+      'Quantitative aptitude, logical reasoning, and data interpretation questions on IndiaBIX.',
   },
   {
     id: 'interviews',
     title: 'Tech Interview Handbook',
     group: 'Interviews',
     subjects: ['interviews'],
-    url: 'https://github.com/yangshun/tech-interview-handbook',
-    description: 'Technical interview preparation, resumes, and interview process guidance.',
+    url: 'https://www.techinterviewhandbook.org/software-engineering-interview-guide/',
+    description:
+      'Self-introduction, resume, behavioral stories, coding-interview conduct, and offer guidance.',
   },
   {
     id: 'company',

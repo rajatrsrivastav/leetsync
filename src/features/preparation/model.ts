@@ -526,6 +526,7 @@ export function applyPreparationAction(
   switch (action.type) {
     case 'prepRoadmapToday':
     case 'prepRoadmapRecord':
+    case 'prepRoadmapBookmark':
       prep.roadmap ??= emptyRoadmap();
       applyRoadmapAction(prep.roadmap, action, now);
       return;

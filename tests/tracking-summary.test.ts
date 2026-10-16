@@ -56,15 +56,16 @@ describe('tracking summaries', () => {
     expect(preparationActivity(state, 30, new Date(entry.studiedAt)).at(-1)).toEqual({
       date,
       solves: 1,
+      tasks: 0,
       studies: 1,
       minutes: 15,
     });
     expect(state).toEqual(before);
     expect(previousTopics(state)).toEqual([]);
   });
-  it('keeps the nine curated destinations unique, HTTPS-only, and the snapshot limitation explicit', () => {
-    expect(trackedResources).toHaveLength(9);
-    expect(new Set(trackedResources.map((r) => r.url)).size).toBe(9);
+  it('keeps the ten curated destinations unique, HTTPS-only, and the snapshot limitation explicit', () => {
+    expect(trackedResources).toHaveLength(10);
+    expect(new Set(trackedResources.map((r) => r.url)).size).toBe(10);
     expect(trackedResources.every((r) => new URL(r.url).protocol === 'https:')).toBe(true);
     expect(trackedResources.find((r) => r.id === 'company')?.description).toMatch(
       /July 2026 snapshot.*not live question frequency/,

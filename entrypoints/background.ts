@@ -170,6 +170,7 @@ export default defineBackground(() => {
       switch (command.type) {
         case 'prepRoadmapToday':
         case 'prepRoadmapRecord':
+        case 'prepRoadmapBookmark':
         case 'prepResourceVisit':
         case 'prepResourceBookmark':
         case 'prepResourceProgress':
