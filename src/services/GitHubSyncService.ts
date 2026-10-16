@@ -36,6 +36,10 @@ export class GitHubSyncService {
       const snapshot = await this.storage.transaction((state) => {
         const job = state.syncJobs[id];
         if (!state.settings.github.enabled || !job || !retryDue(job, this.now())) return undefined;
+        job.destination ??= {
+          repository: state.settings.github.repository,
+          branch: state.settings.github.branch,
+        };
         job.status = 'syncing';
         job.attempts += 1;
         job.updatedAt = this.now().toISOString();
@@ -55,6 +59,7 @@ export class GitHubSyncService {
           throw new Error(
             'This attempt’s curriculum problem is unavailable. Restore the curriculum before retrying.',
           );
+        if (job.destination) Object.assign(snapshot.settings.github, job.destination);
         const result = await this.github.sync(attempt, problem, snapshot, this.problems);
         await this.storage.transaction((state) => {
           const current = state.syncJobs[id];

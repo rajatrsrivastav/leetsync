@@ -573,7 +573,9 @@
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 .dsacommit-surface .attempt-widget-header > a:hover,
 .dsacommit-surface .attempt-widget-dashboard-btn:hover {

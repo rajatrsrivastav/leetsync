@@ -41,7 +41,7 @@ describe('storage migrations', () => {
     const second = migrateState(null);
     expect(first.settings.dailyGoal).toBe(2);
     expect(first.settings.github.enabled).toBe(false);
-    expect(first.schemaVersion).toBe(1);
+    expect(first.schemaVersion).toBe(2);
     first.settings.github.repository = 'one/repo';
     expect(second.settings.github.repository).toBe('');
     expect(emptyState().settings.github.repository).toBe('');
@@ -72,7 +72,7 @@ describe('storage migrations', () => {
       },
     });
     expect(migrated).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       settings: {
         dailyGoal: 3,
         timerBehavior: 'manual',
@@ -93,7 +93,7 @@ describe('storage migrations', () => {
 
   it('accepts a pre-versioned empty state through the defined migration path', () => {
     expect(migrateState({ settings: { primaryLanguage: 'cpp' } })).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       settings: { primaryLanguage: 'cpp', dailyGoal: 2 },
     });
   });
@@ -113,7 +113,7 @@ describe('storage migrations', () => {
     expect(migrateState(structuredClone(state))).toEqual(state);
   });
 
-  it.each([2, 99, -1, '1'])(
+  it.each([3, 99, -1, '1'])(
     'refuses unsupported schema version %s rather than erasing user data',
     (schemaVersion) => {
       expect(() => migrateState({ schemaVersion })).toThrow(/newer DSACommit/);
@@ -127,7 +127,7 @@ describe('storage migrations', () => {
   it.each(['attempts', 'progress', 'activities', 'queues', 'syncJobs'])(
     'rejects an invalid %s container',
     (key) => {
-      expect(() => migrateState({ schemaVersion: 1, [key]: [] })).toThrow(/Invalid stored/);
+      expect(() => migrateState({ schemaVersion: 2, [key]: [] })).toThrow(/Invalid stored/);
     },
   );
 

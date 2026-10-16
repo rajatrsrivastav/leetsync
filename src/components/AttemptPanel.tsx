@@ -1,3 +1,4 @@
+import { SourceRecovery } from './SourceRecovery';
 import { useEffect, useState } from 'react';
 import {
   ArrowRight,
@@ -53,11 +54,12 @@ export function displayTime(seconds: number): string {
 /** Original learning prompts; these are not TakeUForward editorial content. */
 function guidanceFor(problem: CurriculumProblem): Guidance {
   return {
-    pattern: problem.pattern ?? problem.module,
+    pattern:
+      'What features of the input remind you of a previous problem? Explain the similarity before naming a pattern.',
     questions: [
-      'What does a tiny example tell you?',
-      'What information must you keep as the input grows?',
-      'Which operation does a straightforward approach repeat?',
+      'What is the simplest correct brute-force approach, and which work does it repeat?',
+      'What must remain true after every step? State that invariant in your own words.',
+      'Try an empty input, duplicates, and a smallest counterexample. Which assumptions break?',
     ],
     strongHint:
       'Write down a straightforward approach first. Identify its repeated work, then consider which data structure or invariant could let you reuse that work. Check your idea against an edge case before coding.',
@@ -74,7 +76,7 @@ export function AttemptPanel({ state, problem, act, busy, compact }: AttemptPane
     return () => clearInterval(interval);
   }, []);
   useEffect(() => {
-    setHelpLevel(0);
+    setHelpLevel(Math.max(0, ...(attempt?.hintLevels ?? [])));
     setResetConfirm(false);
   }, [attempt?.id, problem.id]);
   const today = localDate(now);
@@ -105,7 +107,8 @@ export function AttemptPanel({ state, problem, act, busy, compact }: AttemptPane
   }
   async function hint(level: number) {
     if (!attempt || busy) return;
-    if (await act({ type: 'hint', attemptId: attempt.id })) setHelpLevel(level);
+    if (await act({ type: 'hint', attemptId: attempt.id, ...(level > 0 ? { level } : {}) }))
+      setHelpLevel(level);
   }
   async function externalHelp(type: 'editorial' | 'solution') {
     if (!attempt || busy) return;
@@ -144,6 +147,7 @@ export function AttemptPanel({ state, problem, act, busy, compact }: AttemptPane
           {problem.order} / {curriculum.data.problems.length}
         </span>
       </div>
+      {attempt && <SourceRecovery attempt={attempt} state={state} act={act} busy={busy} />}
       <h2 className="attempt-title">{problem.title}</h2>
       <div className="attempt-badges">
         <span
@@ -153,9 +157,11 @@ export function AttemptPanel({ state, problem, act, busy, compact }: AttemptPane
         </span>
         {attempt?.kind === 'revision' && <span>Revision</span>}
       </div>
-      {state.settings.showPattern && problem.pattern && (
-        <p className="attempt-pattern">{problem.pattern}</p>
-      )}
+      {state.settings.showPattern &&
+        problem.pattern &&
+        ['accepted', 'completed'].includes(attempt?.status ?? '') && (
+          <p className="attempt-pattern">{problem.pattern}</p>
+        )}
 
       {attempt?.status === 'completed' ? (
         <div className="attempt-completed" role="status">
@@ -280,10 +286,10 @@ export function AttemptPanel({ state, problem, act, busy, compact }: AttemptPane
                     <button
                       key={level}
                       className="attempt-secondary"
-                      disabled={busy || helpLevel >= level}
+                      disabled={busy || helpLevel >= level || level > helpLevel + 1}
                       onClick={() => void hint(level)}
                     >
-                      {level === 1 ? 'Pattern' : level === 2 ? 'Questions' : 'Strong hint'}
+                      {level === 1 ? 'Recognize' : level === 2 ? 'Reason' : 'Check your approach'}
                     </button>
                   ))}
                 </div>

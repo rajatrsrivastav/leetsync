@@ -7,7 +7,7 @@ export async function send(command: Command): Promise<AppState> {
     throw new Error(response?.error || 'DSACommit is unavailable. Reload the extension and page.');
   return response.state as AppState;
 }
-export function dashboardUrl(section = 'overview') {
+export function dashboardUrl(section = 'preparation') {
   return browser.runtime.getURL('/dashboard.html') + '#' + section;
 }
 export async function openDashboard(section?: string) {

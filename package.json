@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "A local-first DSA practice companion for Chrome and Edge",
+  "description": "A local-first campus placement preparation companion for Chrome and Edge",
   "scripts": {
     "dev": "wxt",
     "dev:edge": "wxt -b edge",

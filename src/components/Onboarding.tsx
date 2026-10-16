@@ -58,12 +58,12 @@ export function Onboarding({
         <span className="text-accent">Your next chapter.</span>
       </h1>
       <p className="intro">
-        Build interview consistency, one meaningful problem at a time. We’ll take care of what comes
-        next.
+        Build coding consistency with Striver, then track CS, system design, aptitude, and interview
+        practice in your campus preparation dashboard.
       </p>
       <div className="stack">
         <label>
-          Daily target
+          Daily DSA target
           <input
             type="number"
             min={1}

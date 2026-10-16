@@ -1,3 +1,4 @@
+import { SourceRecovery } from '../SourceRecovery';
 import { useEffect } from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import type { CurriculumProblem } from '../../types';
@@ -105,6 +106,21 @@ export function ProblemDialog({
                   hints
                 </p>
                 {a.notes && <p>{a.notes}</p>}
+                {(a.timeComplexity || a.spaceComplexity) && (
+                  <p>
+                    User-reported complexity: time {a.timeComplexity || 'unknown'} · space{' '}
+                    {a.spaceComplexity || 'unknown'}
+                  </p>
+                )}
+                {a.complexityAnalysis && (
+                  <p>
+                    {a.complexityAnalysis.reviewed
+                      ? 'Local observations reviewed by user'
+                      : 'Local observations unreviewed'}{' '}
+                    · not a proof
+                  </p>
+                )}
+                <SourceRecovery attempt={a} state={state} act={act} busy={busy} />
                 {a.code && (
                   <details>
                     <summary className="small quiet">Saved code · {a.language}</summary>

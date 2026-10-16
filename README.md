@@ -1,8 +1,33 @@
 # DSACommit
 
-A local-first Chrome and Edge extension that gives you your next Striver problem, tracks deliberate practice, and helps you complete **two meaningful problems a day**.
+A local-first **campus placement preparation companion** for Chrome and Edge, built with React, TypeScript, and WXT. A focused progress dashboard and curated external resources sit alongside the existing Striver tracker, Accepted capture, timers, streaks, revisions, and optional GitHub sync.
 
-**Open extension → Start Problem → Start Attempt → solve → Accepted → reflect → save → next problem.** GitHub sync is optional. No backend, account, telemetry, or GitHub connection is required to study.
+**Check progress → open a resource → study → record progress → continue.** No account, backend, telemetry, or AI service is required. Existing DSA data is preserved.
+
+## Preparation tracking workspace
+
+The main dashboard focuses on **how much you have prepared, what is pending, and where to continue**. It contains no embedded lessons or MCQ interfaces.
+
+- **Progress:** daily DSA goal and streak, solved / 179, independent/assisted/relearn attempt counts, average time across timed completed solves, revision backlog, topic mastery, and the last 7/30 days of preparation activity.
+- **Subject tracking:** explicitly recorded completed/in-progress topics across Core CS, System Design, aptitude, interviews, and other preparation subjects. Previous study topics remain visible separately. External resources have no invented completion percentage.
+- **Resources:** nine curated destinations with Open Resource, Mark Progress, Resume Learning, and bookmarks. Links open the original site in a new tab. Resume opens the resource with your last studied topic shown on its card; the extension does not inspect external browsing or infer a deep-link position.
+- **Manual study records:** topic, subject, explicit completion, and optional minutes. Repeated records contribute study time, while topic counts use the latest status for the same resource/subject/topic. Opening a link records only a visit; it never completes a topic, solves a DSA problem, or extends a DSA streak.
+
+| Area                  | Resource                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| DSA                   | [Striver's sheet](https://takeuforward.org/prep-hub/strivers-180-master-dsa-patterns)                                                       |
+| DSA concepts/patterns | [Awesome LeetCode Resources](https://github.com/ashishps1/awesome-leetcode-resources)                                                       |
+| Core CS               | [CS Fundamentals for Interviews](https://github.com/aashishbharti04/cs-fundamentals-for-interviews)                                         |
+| HLD — Primary         | [Awesome System Design Resources](https://github.com/ashishps1/awesome-system-design-resources)                                             |
+| HLD — Additional      | [System Design Primer](https://github.com/donnemartin/system-design-primer)                                                                 |
+| LLD/OOD               | [Awesome Low Level Design](https://github.com/ashishps1/awesome-low-level-design)                                                           |
+| Aptitude              | [IndiaBIX](https://www.indiabix.com/aptitude/)                                                                                              |
+| Interview preparation | [Tech Interview Handbook](https://github.com/yangshun/tech-interview-handbook)                                                              |
+| Company questions     | [Company-wise questions](https://github.com/snehasishroy/leetcode-companywise-interview-questions) — July 2026 snapshot, not live frequency |
+
+All nine original destinations were checked on October 17, 2026. Content and availability may change.
+
+**Existing data is preserved.** The additive resource-tracking namespace leaves previous lesson sessions, quiz answers/results, reflections, plans, timers, and revision dates intact. Previous study history remains readable and included in backups; an existing active timer can be paused. No old answers are converted into unverified external completions. Bookmarks, resource visits, and study records survive reloads/restarts and backup export/import. The DSA popup, daily two-question queue, Accepted capture, GitHub sync, and revision workflows remain unchanged. No AI provider or external analysis request is added.
 
 ## Run locally
 
@@ -13,7 +38,7 @@ pnpm install
 pnpm dev
 ```
 
-WXT starts the development server and a browser with the development extension. Its Chrome development output is `.output/chrome-mv3-dev`. Keep the terminal running while developing. To target Edge:
+WXT starts the development server. Load `.output/chrome-mv3-dev` manually through Chrome's **Load unpacked** control and keep the terminal running while developing. Automatic browser launch is disabled so you can use your chosen browser profile. To target Edge:
 
 ```sh
 pnpm dev:edge
@@ -38,11 +63,11 @@ The unpacked extension is in **`.output/chrome-mv3`**. It contains WXT's generat
 
 The Chrome production bundle also works in Edge. `pnpm build:edge` produces WXT's Edge-specific bundle under `.output/edge-mv3`. After rebuilding, use Reload on the extension's browser management page and reload any existing LeetCode tabs. Development and production installs may use different extension IDs and separate stored data.
 
-## What works
+## Existing DSA workflow
 
 - **Popup:** today's queue, one-click problem launch, daily progress, streak, weekly activity, and revision count.
 - **LeetCode widget:** explicit Start/Pause/Resume, persisted timer, submission counts, hints, editorial/solution flags, progressive guidance, reflection, and next-problem navigation.
-- **Dashboard:** the entire ordered curriculum, previous attempts, local activity calendar, topic mastery, revision queue, manual completion, per-problem reset, settings, and JSON backup export.
+- **Dashboard:** the entire ordered curriculum, previous attempts, local activity calendar, topic mastery, revision queue, manual completion, per-problem reset, settings, and versioned JSON backup export/import.
 - **Completion:** Accepted stops the timer. You must choose Independent, Needed Help, or Relearn before the attempt updates daily progress. Notes, complexity, source code, and language can be recorded during reflection.
 - **Local durability:** saved attempts survive reloads, closed tabs, browser restarts, and service-worker restarts. Resetting a problem's curriculum status preserves previous attempts and past daily activity.
 - **Optional GitHub output:** completed solutions, metadata, optional README progress, visible sync errors, and retries. Local completion is saved before network work begins.
@@ -79,27 +104,27 @@ Tokens are stored separately in this browser profile's extension storage, exclud
 
 ## Privacy and permissions
 
-| Permission/access | Purpose |
-| --- | --- |
-| `storage` | Keep attempts, progress, queues, settings, and sync jobs locally. |
-| `alarms` | Wake the service worker to retry configured GitHub sync. |
-| `https://leetcode.com/problems/*` | Inject the practice widget and observe submissions on supported problem pages. |
+| Permission/access                   | Purpose                                                                                        |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `storage`                           | Keep attempts, progress, queues, settings, and sync jobs locally.                              |
+| `alarms`                            | Wake the service worker to retry configured GitHub sync.                                       |
+| `https://leetcode.com/problems/*`   | Inject the practice widget and observe submissions on supported problem pages.                 |
 | Optional `https://api.github.com/*` | Send completed solutions to the repository you configure. Requested only when enabling GitHub. |
 
 There is no broad browsing-history access, `<all_urls>` access, telemetry, or backend. Normal study data stays in local extension storage. GitHub receives source and selected attempt metadata only when sync is configured. The versioned curriculum is bundled with the extension.
 
-Settings → **Export local backup** downloads attempts, code, notes, progress, and settings as JSON, excluding the GitHub token. Export before uninstalling or switching browser profiles; browser extension data does not automatically follow you. This release exports backups but does not include a restore/import UI for saved user state.
+Settings → **Export local backup** downloads attempts, code, notes, progress, and settings as JSON, excluding the GitHub token. Export before uninstalling or switching browser profiles; browser extension data does not automatically follow you. The versioned import UI merges missing history, preserves existing IDs, pauses imported timers, and includes both preparation and DSA records. Fresh preparation imports disable AI context export until you opt in again.
 
 ## Commands and checks
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` / `pnpm dev:edge` | WXT development mode. |
-| `pnpm build` / `pnpm build:edge` | Production unpacked bundle. |
-| `pnpm zip` | Package the production extension. |
-| `pnpm typecheck` | Generate WXT types and check TypeScript. |
-| `pnpm test` | Run Vitest business-logic and adapter tests. |
-| `pnpm test:watch` | Run Vitest in watch mode. |
+| Command                                    | Purpose                                       |
+| ------------------------------------------ | --------------------------------------------- |
+| `pnpm dev` / `pnpm dev:edge`               | WXT development mode.                         |
+| `pnpm build` / `pnpm build:edge`           | Production unpacked bundle.                   |
+| `pnpm zip`                                 | Package the production extension.             |
+| `pnpm typecheck`                           | Generate WXT types and check TypeScript.      |
+| `pnpm test`                                | Run Vitest business-logic and adapter tests.  |
+| `pnpm test:watch`                          | Run Vitest in watch mode.                     |
 | `pnpm import:curriculum file.json --check` | Validate a curriculum update without writing. |
 
 Browser fixture test:
@@ -110,7 +135,7 @@ pnpm exec playwright install chromium
 pnpm test:e2e
 ```
 
-The Playwright test loads the actual built extension in a temporary Chromium profile and serves a controlled LeetCode-shaped fixture. It exercises onboarding, two solves, timer reload, reflection, local persistence, and browser restart. It does not sign into LeetCode, submit to its judge, or write to a live GitHub repository. Live authenticated LeetCode behavior and live GitHub writes still require the manual acceptance checklist in [DEVELOPMENT.md](DEVELOPMENT.md).
+The Playwright tests load the actual built extension in a temporary Chromium profile and serve a controlled LeetCode-shaped fixture. They exercise onboarding, both DOM and network submission capture, two DSA solves, an imported previous study backup, external resource navigation, offline manual progress, bookmarks, unchanged DSA history, backup export, and browser restart. They do not sign into LeetCode, submit to its judge, or write to a live GitHub repository. Live authenticated LeetCode behavior and live GitHub writes still require the manual acceptance checklist in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 `Alt+Shift+D` opens DSACommit by default. Assign timer, hint, and next-problem shortcuts in `chrome://extensions/shortcuts` or `edge://extensions/shortcuts`.
 
@@ -121,3 +146,5 @@ LeetCode's DOM is an external boundary. Detection is deliberately tied to a newl
 Monaco's virtualized editor text is not a reliable full-source capture. DSACommit returns no code rather than committing a partial editor buffer; paste code when prompted. Core progress and streak tracking remain usable without code capture or GitHub.
 
 Architecture, persistence rules, scoring formulas, known boundaries, and the full manual acceptance checklist are in [DEVELOPMENT.md](DEVELOPMENT.md).
+
+Reliability improvements include schema-2 checkpoints, validated backup import, source provenance gates, submission-ID verification, post-solve local complexity observations, structured learning reflections, and adaptive due-revision ranking. See [recovery and verification boundaries](docs/RELIABILITY.md). Reload the existing extension after building; retain its extension ID/profile to retain local history.

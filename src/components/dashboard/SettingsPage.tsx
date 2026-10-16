@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Check, Download, Github } from 'lucide-react';
+import { BackupPanel } from '../BackupPanel';
+import { Check, Github } from 'lucide-react';
 import { browser } from 'wxt/browser';
 import type { Settings } from '../../types';
 import { curriculum } from '../../domain/curriculum/Striver180CurriculumProvider';
@@ -32,18 +33,7 @@ export function SettingsPage({ state, act, busy }: DashboardProps) {
       setNotice('Settings saved.');
     }
   };
-  const backup = () => {
-    const blob = new Blob(
-      [JSON.stringify({ ...state, exportedAt: new Date().toISOString() }, null, 2)],
-      { type: 'application/json' },
-    );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dsacommit-backup-${localDate()}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
+
   return (
     <>
       <PageHeading
@@ -125,21 +115,7 @@ export function SettingsPage({ state, act, busy }: DashboardProps) {
               original target.
             </p>
           </section>
-          <section className="panel">
-            <h3>Your data belongs to you</h3>
-            <p className="small">
-              No telemetry, backend, or browsing-history collection. Export your saved attempts and
-              progress before reinstalling or switching browsers. Backups include saved code and
-              notes, never your GitHub token.
-            </p>
-            <button className="button" onClick={backup}>
-              <Download size={14} />
-              Export local backup
-            </button>
-            <p className="export-note">
-              Keyboard shortcuts can be assigned in your browser’s extension shortcuts page.
-            </p>
-          </section>
+          <BackupPanel state={state} act={act} busy={busy} />
         </div>
         <section className="panel">
           <h3 className="flex items-center gap-2">

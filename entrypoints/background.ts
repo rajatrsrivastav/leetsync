@@ -1,3 +1,6 @@
+import { applyPreparationAction, defaultPreparation } from '../src/features/preparation/model';
+import { preparationLessons } from '../src/features/preparation/catalog';
+import { preparationDsaTasks } from '../src/features/preparation/integration';
 import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/utils/define-background';
 import { StorageService, TOKEN_KEY } from '../src/services/StorageService';
@@ -14,6 +17,7 @@ import {
   startAttempt,
 } from '../src/domain/attempt';
 import type { Command } from '../src/services/commands';
+import { mergeBackup, parseBackup } from '../src/services/BackupService';
 import { localDate } from '../src/utils/date';
 import type { Settings } from '../src/types';
 import { GitHubService } from '../src/services/GitHubService';
@@ -92,8 +96,7 @@ export default defineBackground(() => {
     if (command.type === 'getState') return getState();
     if (command.type === 'openDashboard') {
       const url =
-        browser.runtime.getURL('/dashboard.html') +
-        (command.section ? '#' + command.section : '');
+        browser.runtime.getURL('/dashboard.html') + (command.section ? '#' + command.section : '');
       await browser.tabs.create({ url });
       return getState();
     }
@@ -109,6 +112,12 @@ export default defineBackground(() => {
         'manualAccept',
         'submission',
         'complete',
+        'beginCapture',
+        'identifyCapture',
+        'resolveCapture',
+        'captureRecovery',
+        'retryCapture',
+        'recoverCode',
       ];
       if (!allowed.includes(command.type))
         throw new Error('Open extension settings to perform this action.');
@@ -119,10 +128,18 @@ export default defineBackground(() => {
           ? state.attempts[command.attemptId]?.problemId
           : 'problemId' in command
             ? command.problemId
-            : undefined;
+            : 'requestId' in command
+              ? state.pendingSubmissions?.[command.requestId]?.attemptId
+                ? state.attempts[state.pendingSubmissions[command.requestId]!.attemptId]?.problemId
+                : undefined
+              : undefined;
       const problem = problemId ? curriculum.getProblem(problemId) : undefined;
       // Explicit Next opens an allowlisted curriculum URL. Other actions must belong to this problem.
-      if (!(command.type === 'prepare' && command.open) && (!problem || problem.slug !== pageSlug))
+      if (
+        command.type === 'beginCapture'
+          ? command.slug !== pageSlug
+          : !(command.type === 'prepare' && command.open) && (!problem || problem.slug !== pageSlug)
+      )
         throw new Error('This attempt belongs to a different problem.');
     }
     if (command.type === 'settings') {
@@ -148,8 +165,166 @@ export default defineBackground(() => {
       await browser.permissions.remove({ origins: ['https://api.github.com/*'] });
       return getState();
     }
+    if (command.type === 'importBackup') parseBackup(command.text);
     const state = await storage.transaction((s) => {
       switch (command.type) {
+        case 'prepRoadmapToday':
+        case 'prepRoadmapRecord':
+        case 'prepResourceVisit':
+        case 'prepResourceBookmark':
+        case 'prepResourceProgress':
+        case 'prepProfile':
+        case 'prepPlan':
+        case 'prepStart':
+        case 'prepPause':
+        case 'prepResume':
+        case 'prepAnswer':
+        case 'prepComplete': {
+          s.preparation ??= defaultPreparation();
+          applyPreparationAction(
+            s.preparation,
+            command,
+            preparationLessons,
+            preparationDsaTasks(s),
+          );
+          break;
+        }
+        case 'beginCapture': {
+          if (
+            !/^[a-f0-9-]{36}$/.test(command.requestId) ||
+            typeof command.code !== 'string' ||
+            command.code.length > 200_000 ||
+            typeof command.language !== 'string' ||
+            command.language.length > 80
+          )
+            throw new Error('Invalid capture request.');
+          const a = Object.values(s.attempts)
+            .filter(
+              (a) =>
+                ['active', 'paused'].includes(a.status) &&
+                curriculum.getProblem(a.problemId)?.slug === command.slug,
+            )
+            .sort(
+              (a, b) =>
+                Number(b.id === s.activeAttemptId) - Number(a.id === s.activeAttemptId) ||
+                b.startedAt.localeCompare(a.startedAt),
+            )[0];
+          if (!a) throw new Error('Start an attempt before submitting.');
+          s.pendingSubmissions ??= {};
+          s.pendingSubmissions[command.requestId] ??= {
+            requestId: command.requestId,
+            attemptId: a.id,
+            problemSlug: command.slug,
+            submittedAt: new Date().toISOString(),
+            requestCode: command.code,
+            requestLanguage: command.language,
+            status: 'waiting',
+          };
+          break;
+        }
+        case 'identifyCapture': {
+          const p = s.pendingSubmissions?.[command.requestId];
+          if (!p || !/^\d{1,20}$/.test(command.submissionId))
+            throw new Error('Unknown captured submission.');
+          if (p.submissionId && p.submissionId !== command.submissionId)
+            throw new Error('Submission identity cannot change.');
+          p.submissionId = command.submissionId;
+          p.status = 'checking';
+          break;
+        }
+        case 'resolveCapture': {
+          const p = s.pendingSubmissions?.[command.requestId];
+          if (
+            !p ||
+            !p.submissionId ||
+            command.result.id !== `leetcode:submission:${p.submissionId}` ||
+            command.result.problemSlug !== p.problemSlug
+          )
+            throw new Error('Submission mismatch.');
+          const a = requireAttempt(s, p.attemptId);
+          const result = command.result;
+          if (
+            result.code !== p.requestCode ||
+            String(result.language).toLowerCase().replace(/\s/g, '').replace('c++', 'cpp') !==
+              String(p.requestLanguage).toLowerCase().replace(/\s/g, '').replace('c++', 'cpp')
+          ) {
+            delete result.code;
+            delete result.codeProvenance;
+          }
+          recordSubmission(s, a.id, result);
+          if (
+            result.verdict === 'accepted' &&
+            ['accepted', 'completed'].includes(a.status) &&
+            result.codeProvenance === 'server-verified' &&
+            result.code &&
+            result.language &&
+            (!a.code || a.codeProvenance !== 'user-confirmed') &&
+            !['syncing', 'synced'].includes(s.syncJobs[a.id]?.status ?? '')
+          ) {
+            a.code = result.code;
+            a.language = result.language;
+            a.codeProvenance = 'server-verified';
+            a.verifiedSubmissionId = p.submissionId;
+          }
+          if (
+            a.status === 'completed' &&
+            a.codeProvenance === 'server-verified' &&
+            s.settings.github.enabled &&
+            s.settings.github.autoCommit
+          )
+            s.syncJobs[a.id] ??= {
+              id: a.id,
+              attemptId: a.id,
+              status: 'pending',
+              attempts: 0,
+              updatedAt: new Date().toISOString(),
+            };
+          if (a.codeProvenance === 'server-verified') delete p.requestCode;
+          p.status = 'resolved';
+          delete p.lastError;
+          break;
+        }
+        case 'captureRecovery': {
+          const p = s.pendingSubmissions?.[command.requestId];
+          if (p && p.status !== 'resolved') {
+            p.status = 'recovery';
+            p.lastError = command.error.slice(0, 300);
+          }
+          break;
+        }
+        case 'retryCapture': {
+          const p = s.pendingSubmissions?.[command.requestId];
+          if (!p?.submissionId)
+            throw new Error('Submission ID unavailable. Recover the source manually.');
+          p.status = 'checking';
+          delete p.lastError;
+          break;
+        }
+        case 'recoverCode': {
+          const a = requireAttempt(s, command.attemptId);
+          if (
+            !['accepted', 'completed'].includes(a.status) ||
+            !command.confirmed ||
+            typeof command.code !== 'string' ||
+            typeof command.language !== 'string' ||
+            !command.code.trim() ||
+            command.code.length > 200_000 ||
+            !command.language.trim()
+          )
+            throw new Error('Confirm the exact accepted source and language first.');
+          if (s.syncJobs[a.id]?.status === 'synced' || s.syncJobs[a.id]?.status === 'syncing')
+            throw new Error('Already synced or syncing source is immutable.');
+          a.code = command.code;
+          a.language = command.language;
+          a.codeProvenance = 'user-confirmed';
+          delete a.complexityAnalysis;
+          break;
+        }
+        case 'importBackup': {
+          const merged = mergeBackup(s, parseBackup(command.text));
+          Object.assign(s, merged);
+          break;
+        }
         case 'prepare': {
           const problem = curriculum.getProblem(command.problemId);
           if (!problem) throw new Error('Unknown curriculum problem.');
@@ -174,8 +349,13 @@ export default defineBackground(() => {
           const a = requireAttempt(s, command.attemptId);
           if (!['ready', 'active', 'paused', 'accepted'].includes(a.status))
             throw new Error('This attempt has already ended.');
-          if (command.type === 'hint') a.hintsUsed = Math.min(999, a.hintsUsed + 1);
-          else if (command.type === 'editorial') a.editorialViewed = true;
+          if (command.type === 'hint') {
+            if (command.level && ![1, 2, 3].includes(command.level))
+              throw new Error('Invalid hint level.');
+            if (command.level && (a.hintLevels ?? []).includes(command.level)) break;
+            a.hintsUsed = Math.min(999, a.hintsUsed + 1);
+            if (command.level) a.hintLevels = [...(a.hintLevels ?? []), command.level];
+          } else if (command.type === 'editorial') a.editorialViewed = true;
           else a.solutionViewed = true;
           break;
         }
@@ -204,6 +384,9 @@ export default defineBackground(() => {
             throw new Error('Submission belongs to another problem.');
           if (r.code && (typeof r.code !== 'string' || r.code.length > 200_000))
             throw new Error('Code exceeds the capture limit.');
+          delete r.code;
+          delete r.language;
+          delete r.codeProvenance;
           recordSubmission(s, command.attemptId, r);
           break;
         }
@@ -217,12 +400,18 @@ export default defineBackground(() => {
         case 'retrySync': {
           const a = requireAttempt(s, command.attemptId);
           if (!s.settings.github.enabled) throw new Error('Enable GitHub in Settings first.');
-          if (a.status !== 'completed' || !a.code?.trim() || !a.language)
+          if (
+            a.status !== 'completed' ||
+            !a.code?.trim() ||
+            !a.language ||
+            !['server-verified', 'user-confirmed'].includes(a.codeProvenance ?? '')
+          )
             throw new Error('A completed attempt with source and language is required.');
           const previous = s.syncJobs[a.id];
           if (previous?.status !== 'synced' && previous?.status !== 'syncing')
             s.syncJobs[a.id] = {
               id: a.id,
+              destination: previous?.destination,
               attemptId: a.id,
               status: 'pending',
               attempts: 0,
@@ -258,7 +447,7 @@ export default defineBackground(() => {
       }
       s.queues[localDate()] = DailyQueueService.generate(s, curriculum.getProblems());
       return s;
-    });
+    }, command.type === 'importBackup');
     if (command.type === 'prepare' && command.open) {
       const problem = curriculum.getProblem(command.problemId)!;
       await browser.tabs.create({
@@ -273,7 +462,7 @@ export default defineBackground(() => {
             encodeURIComponent(problem.id),
         });
     }
-    if (['complete', 'retrySync', 'settings'].includes(command.type)) drain();
+    if (['complete', 'retrySync', 'settings', 'resolveCapture'].includes(command.type)) drain();
     return state;
   }
   browser.runtime.onMessage.addListener((message, sender, respond) => {
@@ -283,6 +472,13 @@ export default defineBackground(() => {
     if (isContent && !/^https:\/\/leetcode\.com\/problems\//.test(url)) {
       respond({ ok: false, error: 'Unsupported page.' });
       return;
+    }
+    if (!isContent && message.command?.type === 'exportRecovery') {
+      void storage
+        .exportRecovery()
+        .then((recovery) => respond({ ok: true, recovery }))
+        .catch(() => respond({ ok: false, error: 'Recovery export failed.' }));
+      return true;
     }
     void execute(message.command, isContent ? url : undefined)
       .then((state) => respond({ ok: true, state }))

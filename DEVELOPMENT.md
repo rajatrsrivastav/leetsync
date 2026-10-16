@@ -4,21 +4,21 @@ DSACommit uses WXT, React, TypeScript, Tailwind CSS, and Manifest V3. It is a br
 
 ## Repository map
 
-| Location | Responsibility |
-| --- | --- |
-| `entrypoints/background.ts` | Validate extension commands, serialize mutations, open allowlisted problem URLs, handle shortcuts, and drain sync jobs. |
-| `entrypoints/popup/` | Onboarding and today's next problem. |
-| `entrypoints/dashboard/` | Overview, curriculum, attempts, revisions, settings, and export. |
-| `entrypoints/leetcode.content/` | Shadow-root widget, route tracking, platform event delivery. |
-| `src/components/` | Shared attempt panel, reflection, onboarding, and UI primitives. |
-| `src/domain/attempt/` | Pure lifecycle transitions, timing, idempotency, and completion. |
-| `src/domain/curriculum/` | Generic provider contract, verified snapshot provider, validation, and import helpers. |
-| `src/domain/progress/`, `src/domain/streak/` | Explainable mastery and local activity statistics. |
-| `src/services/` | Storage, daily queue, revision schedule, code capture boundary, GitHub REST and durable outbox. |
-| `src/repositories/` | Typed views over attempts, progress, settings, and activity. |
-| `src/platforms/leetcode/` | Every LeetCode selector, verdict detector, and code-capture assumption. |
-| `src/data/curricula/` | Versioned navigation metadata and provenance. |
-| `tests/`, `tests/e2e/` | Pure logic/DOM unit tests and built-extension browser fixture. |
+| Location                                     | Responsibility                                                                                                          |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `entrypoints/background.ts`                  | Validate extension commands, serialize mutations, open allowlisted problem URLs, handle shortcuts, and drain sync jobs. |
+| `entrypoints/popup/`                         | Onboarding and today's next problem.                                                                                    |
+| `entrypoints/dashboard/`                     | Overview, curriculum, attempts, revisions, settings, and export.                                                        |
+| `entrypoints/leetcode.content/`              | Shadow-root widget, route tracking, platform event delivery.                                                            |
+| `src/components/`                            | Shared attempt panel, reflection, onboarding, and UI primitives.                                                        |
+| `src/domain/attempt/`                        | Pure lifecycle transitions, timing, idempotency, and completion.                                                        |
+| `src/domain/curriculum/`                     | Generic provider contract, verified snapshot provider, validation, and import helpers.                                  |
+| `src/domain/progress/`, `src/domain/streak/` | Explainable mastery and local activity statistics.                                                                      |
+| `src/services/`                              | Storage, daily queue, revision schedule, code capture boundary, GitHub REST and durable outbox.                         |
+| `src/repositories/`                          | Typed views over attempts, progress, settings, and activity.                                                            |
+| `src/platforms/leetcode/`                    | Every LeetCode selector, verdict detector, and code-capture assumption.                                                 |
+| `src/data/curricula/`                        | Versioned navigation metadata and provenance.                                                                           |
+| `tests/`, `tests/e2e/`                       | Pure logic/DOM unit tests and built-extension browser fixture.                                                          |
 
 The source of manifest configuration is `wxt.config.ts` and the WXT entrypoints. Production output is `.output/chrome-mv3`; development output is `.output/chrome-mv3-dev`.
 
@@ -28,7 +28,8 @@ The source of manifest configuration is `wxt.config.ts` and the WXT entrypoints.
 
 ```ts
 type AppState = {
-  schemaVersion: 1;
+  schemaVersion: 2;
+  preparation?: PreparationState; // additive namespace, independently versioned at 1
   settings: Settings;
   attempts: Record<string, Attempt>;
   progress: Record<string, ProblemProgress>;
@@ -45,9 +46,9 @@ The token is stored separately under `dsacommit.github-token`; it is not part of
 
 Popup, dashboard, and widget dispatch typed commands through `src/services/client.ts`. `useAppState` serializes local actions and refreshes on focus, storage changes, and a four-second poll. A persisted timestamp drives elapsed time; UI intervals only repaint the display.
 
-`migrateState` accepts a fresh store and schema 0/1 data, fills current defaults, and validates key records. Unknown future schema versions fail visibly rather than being overwritten. Add explicit migration steps and regression fixtures before introducing schema 2. Keep old attempt IDs and curriculum IDs intact.
+`migrateState` accepts a fresh store and schema 0/1/2 data, fills current defaults, and validates key records. Unknown future schema versions fail visibly rather than being overwritten. Schema 2 adds source provenance, persisted submission verification, and recovery checkpoints. Add migration fixtures before introducing future schemas. See docs/RELIABILITY.md for checkpoint and import behavior. Keep old attempt IDs and curriculum IDs intact.
 
-Export includes saved code and notes and excludes the token. There is no restore UI in V1. Avoid deleting browser extension storage to debug a real user's state; use a separate development profile and export first.
+Export includes saved code and notes and excludes the token. Settings and onboarding expose validated merge-import and recovery export. Avoid deleting browser extension storage to debug a real user's state; use a separate development profile and export first.
 
 ## Attempt lifecycle
 
@@ -186,3 +187,15 @@ Use a fresh browser profile and an unpacked production build. For the optional s
 - Open an official-only curriculum row: its practice page and dashboard attempt controls should provide a complete manual workflow.
 - Export a backup and verify it contains saved attempts but no `dsacommit.github-token` or token value.
 - Inspect `chrome://extensions` service-worker errors and keyboard navigation in popup, dashboard, reflection, and the floating widget. Test both dark and light appearance.
+
+## Preparation tracking module
+
+`src/features/preparation/PreparationHub.tsx` renders progress and resource cards. `resources.ts` is the nine-destination catalog; `tracking.ts` derives latest-topic status and local-day activity without mutating history. External anchors use a new tab with noopener/noreferrer. No lesson reader or MCQ workspace is mounted by the dashboard.
+
+Root schema 2 and preparation version 1 remain compatible. Optional `preparation.resourceTracking` contains resource bookmarks/visit timestamps and immutable manual study entries. Missing tracking data is an empty view; it does not reset old preparation sessions, answers, results, plans, profiles, timers, or revisions. Old topic coverage and session history are displayed separately, avoiding claims about external resource completion. Legacy domain actions remain supported for backward compatibility.
+
+`prepResourceVisit`, `prepResourceBookmark`, and `prepResourceProgress` run through the existing serialized worker/storage transaction and are restricted to extension pages. Visits use worker time. Progress validates the catalog ID, subject, explicit completion, topic, time, and immutable entry ID. Repeated identical IDs are idempotent; changed payloads with the same ID fail. A resource visit is never study evidence or a DSA solve. Backup imports preserve local entry collisions and bookmark preferences and merge newer visit timestamps. Unknown historical resource IDs remain readable for catalog evolution.
+
+Preparation activity combines explicit resource study records, previous completed study sessions, and DSA daily solve counts. Resource-topic counts use latest normalized resource/subject/topic status. DSA streak, mastery, queue, and revision calculations are unchanged. Study time is self-reported; no external tab monitoring is added.
+
+`tests/e2e/preparation.spec.ts` imports a previous-format completed quiz backup, confirms its history remains, opens a resource in a separate tab, checks visit-only behavior, bookmarks it, records offline study and completion, restarts the browser, and validates backup contents and unchanged DSA records. Existing LeetCode DOM/network journeys continue to run independently. Live LeetCode/GitHub verification remains a separate release check.

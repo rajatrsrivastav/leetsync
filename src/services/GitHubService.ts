@@ -169,6 +169,7 @@ export function solutionContent(
     `Solution Viewed: ${attempt.solutionViewed ? 'Yes' : 'No'}`,
     `Confidence: ${singleLine(attempt.confidence)}`,
     `Attempt: ${singleLine(attempt.kind)}`,
+    `Complexity: user-reported; local observations are not a proof`,
     ...(attempt.timeComplexity ? [`Time Complexity: ${singleLine(attempt.timeComplexity)}`] : []),
     ...(attempt.spaceComplexity
       ? [`Space Complexity: ${singleLine(attempt.spaceComplexity)}`]
@@ -392,6 +393,8 @@ export class GitHubService {
     state: AppState,
     problems: CurriculumProblem[],
   ): Promise<{ commitUrl: string }> {
+    if (!['server-verified', 'user-confirmed'].includes(attempt.codeProvenance ?? ''))
+      throw new GitHubError('Confirm the exact accepted source and language before syncing.');
     if (
       attempt.status !== 'completed' ||
       !attempt.completedAt ||
@@ -464,6 +467,12 @@ export class GitHubService {
               curriculumId: attempt.curriculumId,
               completedAt: attempt.completedAt,
               solutionPath: path,
+              codeProvenance: attempt.codeProvenance,
+              submissionId: attempt.verifiedSubmissionId,
+              timeComplexity: attempt.timeComplexity,
+              spaceComplexity: attempt.spaceComplexity,
+              complexityAnalysis: attempt.complexityAnalysis,
+              learning: attempt.learning,
             },
             null,
             2,

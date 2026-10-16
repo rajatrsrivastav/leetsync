@@ -53,6 +53,7 @@ README updates are optional and are bundled into the solution commit. Existing U
 
 ```markdown
 <!-- DSACOMMIT:START -->
+
 ## DSACommit progress
 
 Generated curriculum counts, local streak and topic statistics.

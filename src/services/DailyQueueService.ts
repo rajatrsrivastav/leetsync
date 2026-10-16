@@ -1,3 +1,4 @@
+import { practiceSignals } from './PracticeSignals';
 import type {
   AppState,
   Attempt,
@@ -86,6 +87,7 @@ export class DailyQueueService {
             const left = state.progress[a.id]!;
             const right = state.progress[b.id]!;
             return (
+              practiceSignals(state, b).score - practiceSignals(state, a).score ||
               revisionPriority[left.lastConfidence ?? left.state] -
                 revisionPriority[right.lastConfidence ?? right.state] ||
               (dateKeyFromTimestamp(left.revisionDueAt!) ?? '').localeCompare(
@@ -107,9 +109,10 @@ export class DailyQueueService {
         problemId: problem.id,
         kind: 'revision',
         reason:
-          confidence === 'relearn'
+          practiceSignals(state, problem).reasons[0] ??
+          (confidence === 'relearn'
             ? 'Relearn this problem while it is fresh'
-            : 'A spaced revision is due',
+            : 'A spaced revision is due'),
       });
     }
     for (const problem of unsolved) {

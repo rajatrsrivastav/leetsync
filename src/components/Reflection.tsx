@@ -1,3 +1,5 @@
+import { analyzeComplexity } from '../services/ComplexityService';
+import type { ComplexityAnalysis, LearningReflection } from '../types';
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import type { AppState, Attempt, Confidence, CurriculumProblem } from '../types';
 import type { Command } from '../services/commands';
@@ -61,6 +63,9 @@ function ReflectionForm({
       ? attempt.language
       : state.settings.primaryLanguage,
   );
+  const [codeConfirmed, setCodeConfirmed] = useState(false);
+  const [analysis, setAnalysis] = useState<ComplexityAnalysis>();
+  const [learning, setLearning] = useState<LearningReflection>({});
   const submitting = useRef(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const [saving, setSaving] = useState(false);
@@ -82,6 +87,9 @@ function ReflectionForm({
         attemptId: attempt.id,
         reflection: {
           confidence,
+          ...(codeConfirmed ? { codeConfirmed } : {}),
+          ...(analysis ? { complexityAnalysis: analysis } : {}),
+          ...(Object.keys(learning).length ? { learning } : {}),
           hintsUsed: hints,
           timeComplexity: timeComplexity.trim(),
           spaceComplexity: spaceComplexity.trim(),
@@ -165,6 +173,44 @@ function ReflectionForm({
             onChange={(event) => setHints(Number(event.target.value))}
           />
         </label>
+        {(hints > 0 || attempt.editorialViewed || attempt.solutionViewed) && (
+          <p className="reflection-muted">
+            Help was recorded. This solve will count as assisted even if you now understand it
+            independently; demonstrate independent recall on your next revision.
+          </p>
+        )}
+        <button
+          type="button"
+          className="attempt-secondary"
+          disabled={!code.trim()}
+          onClick={() => setAnalysis(analyzeComplexity(code, language))}
+        >
+          Inspect complexity locally
+        </button>
+        <p className="reflection-muted">
+          Runs only on this device after acceptance. No AI service or code upload. Enter your
+          reviewed bounds below; unknown is a valid answer.
+        </p>
+        {analysis && (
+          <div role="status">
+            <strong>Bounds undetermined · structural observations</strong>
+            <ul>
+              {[...analysis.variables, ...analysis.reasoning, ...analysis.uncertainty].map(
+                (text, i) => (
+                  <li key={i}>{text}</li>
+                ),
+              )}
+            </ul>
+            <label>
+              <input
+                type="checkbox"
+                checked={analysis.reviewed}
+                onChange={(e) => setAnalysis({ ...analysis, reviewed: e.target.checked })}
+              />{' '}
+              I reviewed these observations and my complexity entries.
+            </label>
+          </div>
+        )}
         <div className="reflection-columns">
           <label className="reflection-field">
             Time complexity
@@ -185,6 +231,41 @@ function ReflectionForm({
             />
           </label>
         </div>
+        {(['bruteForce', 'invariant', 'edgeCase', 'nextTime'] as const).map((field) => (
+          <label className="reflection-field" key={field}>
+            {
+              {
+                bruteForce: 'What repeated work did you remove from brute force?',
+                invariant: 'What invariant makes your approach correct?',
+                edgeCase: 'Which edge case challenged your reasoning?',
+                nextTime: 'What will you recognize or try next time?',
+              }[field]
+            }
+            <textarea
+              rows={2}
+              maxLength={1500}
+              value={learning[field] ?? ''}
+              onChange={(e) => setLearning({ ...learning, [field]: e.target.value })}
+            />
+          </label>
+        ))}
+        <label className="reflection-field">
+          Mistake tags (comma separated)
+          <input
+            maxLength={500}
+            placeholder="off-by-one, missed-empty-input"
+            value={(learning.mistakes ?? []).join(',')}
+            onChange={(e) =>
+              setLearning({
+                ...learning,
+                mistakes: e.target.value
+                  .split(',')
+                  .map((x) => x.trim())
+                  .filter(Boolean),
+              })
+            }
+          />
+        </label>
         <label className="reflection-field">
           Notes <span className="reflection-muted">Optional</span>
           <textarea
@@ -212,7 +293,11 @@ function ReflectionForm({
               maxLength={80}
               required={Boolean(code.trim())}
               list={`${id}-languages`}
-              onChange={(event) => setLanguage(event.target.value)}
+              onChange={(event) => {
+                setLanguage(event.target.value);
+                setCodeConfirmed(false);
+                setAnalysis(undefined);
+              }}
             />
           </label>
           <datalist id={`${id}-languages`}>
@@ -244,10 +329,29 @@ function ReflectionForm({
               maxLength={200000}
               rows={7}
               spellCheck={false}
-              onChange={(event) => setCode(event.target.value)}
+              onChange={(event) => {
+                setCode(event.target.value);
+                setCodeConfirmed(false);
+                setAnalysis(undefined);
+              }}
               placeholder="Paste the complete accepted solution…"
             />
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={codeConfirmed}
+              onChange={(e) => setCodeConfirmed(e.target.checked)}
+            />{' '}
+            I confirm this is the complete accepted source and correct language.
+          </label>
+          <p className="reflection-muted">
+            {attempt.codeProvenance === 'server-verified' &&
+            code === attempt.code &&
+            language === attempt.language
+              ? 'Source verified against the LeetCode submission.'
+              : 'GitHub upload requires this confirmation. Progress can be saved without source.'}
+          </p>
         </details>
         <button type="submit" className="attempt-primary" disabled={busy || saving || !confidence}>
           {saving ? 'Saving your progress…' : 'Complete Problem'}

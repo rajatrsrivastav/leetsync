@@ -38,6 +38,7 @@ const attempt = (overrides: Partial<Attempt> = {}): Attempt => ({
   acceptedAt: '2026-10-08T10:28:00Z',
   activeSeconds: 1693,
   status: 'completed',
+  codeProvenance: 'user-confirmed',
   submissionCount: 2,
   submissionIds: ['wrong', 'accepted'],
   hintsUsed: 1,

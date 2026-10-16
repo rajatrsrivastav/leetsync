@@ -37,7 +37,7 @@ async function setup() {
   completeAttempt(
     state,
     'attempt',
-    { confidence: 'assisted', code: 'print(1)', language: 'python3' },
+    { confidence: 'assisted', codeConfirmed: true, code: 'print(1)', language: 'python3' },
     date,
   );
   driver.data[STATE_KEY] = state;
@@ -156,4 +156,34 @@ describe('durable GitHub outbox', () => {
     expect(retryDue({ ...job, attempts: 5 }, new Date(+date + 86400000))).toBe(false);
     expect(retryDue({ ...job, status: 'synced' }, new Date(+date + 86400000))).toBe(false);
   });
+});
+
+it('keeps retries bound to the original repository after settings change', async () => {
+  const storage = await setup();
+  const github = {
+    sync: vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Offline'))
+      .mockResolvedValue({ commitUrl: 'https://github.com/test/solutions/commit/abc' }),
+  };
+  await new GitHubSyncService(
+    storage,
+    github,
+    [p],
+    async () => true,
+    () => date,
+  ).drain();
+  await storage.transaction((s) => {
+    s.settings.github.repository = 'different/repo';
+  });
+  await new GitHubSyncService(
+    storage,
+    github,
+    [p],
+    async () => true,
+    () => new Date(+date + 120000),
+  ).drain();
+  expect(github.sync.mock.calls[1]?.[2].settings.github.repository).toBe('test/solutions');
+  expect((await storage.read()).settings.github.repository).toBe('different/repo');
+  expect((await storage.read()).syncJobs.attempt?.status).toBe('synced');
 });

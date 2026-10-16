@@ -13,7 +13,55 @@ const stateOf = (page: Page) =>
     return (await api.runtime.sendMessage({ channel: 'dsacommit', command: { type: 'getState' } }))
       .state;
   });
-async function fixture(context: BrowserContext) {
+async function fixture(context: BrowserContext, network = false) {
+  const submissions = new Map<string, { code: string; slug: string }>();
+  let sequence = 1000;
+  const checks = new Map<string, number>();
+  if (network) {
+    await context.route('https://leetcode.com/**', async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith('/submit/')) {
+        const body = route.request().postDataJSON();
+        const id = String(++sequence);
+        submissions.set(id, { code: body.typed_code, slug: url.pathname.split('/')[2]! });
+        return route.fulfill({ json: { submission_id: Number(id) } });
+      }
+      if (url.pathname.endsWith('/check/')) {
+        const count = (checks.get(url.pathname) ?? 0) + 1;
+        checks.set(url.pathname, count);
+        return route.fulfill({
+          json: {
+            state: url.pathname.includes('/1002/') && count === 1 ? 'PENDING' : 'SUCCESS',
+            status_code: url.pathname.includes('/1001/') ? 11 : 10,
+          },
+        });
+      }
+      if (url.pathname === '/graphql/') {
+        const id = String(route.request().postDataJSON().variables.submissionId),
+          saved = submissions.get(id)!;
+        return route.fulfill({
+          json: {
+            data: {
+              submissionDetails: {
+                id,
+                code: saved.code,
+                statusCode: 10,
+                timestamp: String(Math.floor(Date.now() / 1000)),
+                lang: { name: 'Python3' },
+                question: { titleSlug: saved.slug },
+              },
+            },
+          },
+        });
+      }
+      if (route.request().resourceType() !== 'document') return route.fulfill({ body: '' });
+      return route.fulfill({
+        contentType: 'text/html',
+        body: `<!doctype html><html><body><h1 data-cy="question-title">Network fixture</h1><textarea aria-label="Code editor">exact submitted source</textarea><button aria-label="Submit">Submit</button><script>document.querySelector('button').onclick=async()=>{await fetch(location.pathname+'submit/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({typed_code:document.querySelector('textarea').value,lang:'python3'})});document.querySelector('textarea').value='changed AFTER submit';};</script></body></html>`,
+      });
+    });
+    return;
+  }
   await context.route('https://leetcode.com/**', (route) =>
     route.request().resourceType() !== 'document'
       ? route.fulfill({ contentType: 'application/javascript', body: '' })
@@ -24,113 +72,134 @@ async function fixture(context: BrowserContext) {
   );
 }
 
-test('fresh install → two meaningful solves → browser restart', async () => {
-  const profile = await mkdtemp(path.join(tmpdir(), 'dsacommit-e2e-'));
-  const extension = path.resolve('.output/chrome-mv3');
-  const launch = () =>
-    chromium.launchPersistentContext(profile, {
-      channel: 'chromium',
-      headless: true,
-      args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
-      ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
-        ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
-        : {}),
+for (const network of [false, true])
+  test(`fresh install → two meaningful solves → browser restart (${network ? 'network capture' : 'DOM fallback'})`, async () => {
+    const profile = await mkdtemp(path.join(tmpdir(), 'dsacommit-e2e-'));
+    const extension = path.resolve('.output/chrome-mv3');
+    const launch = () =>
+      chromium.launchPersistentContext(profile, {
+        channel: 'chromium',
+        headless: true,
+        args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
+        ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
+          ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE }
+          : {}),
+      });
+    let context = await launch();
+    context.setDefaultTimeout(15_000);
+    context.on('page', (page) => {
+      page.on('pageerror', (error) => console.error('PAGE ERROR:', error.message));
+      page.on('console', (message) => {
+        if (message.type() === 'error') console.error('PAGE CONSOLE:', message.text());
+      });
     });
-  let context = await launch();
-  context.setDefaultTimeout(15_000);
-  context.on('page', (page) => {
-    page.on('pageerror', (error) => console.error('PAGE ERROR:', error.message));
-    page.on('console', (message) => {
-      if (message.type() === 'error') console.error('PAGE CONSOLE:', message.text());
-    });
+    try {
+      await fixture(context, network);
+      const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+      const id = new URL(worker.url()).host;
+      const popup = await context.newPage();
+      await popup.goto(`chrome-extension://${id}/popup.html`);
+      await expect(popup.getByRole('spinbutton')).toHaveValue('2');
+      await popup.getByRole('button', { name: 'Start Journey' }).click();
+      await expect(popup.getByRole('heading', { name: 'Majority Element-I' })).toBeVisible();
+      const firstOpened = context.waitForEvent('page');
+      await popup.getByRole('button', { name: 'Start Problem', exact: true }).click();
+      const first = await firstOpened;
+      await first.waitForURL('https://leetcode.com/problems/majority-element/');
+      await first.goto('https://leetcode.com/problems/majority-element/');
+      await first.getByRole('button', { name: 'Start Attempt', exact: true }).click();
+      await expect(first.getByText('ACTIVE TIME', { exact: true })).toBeVisible();
+      const before = await stateOf(popup);
+      const attemptId = before.activeAttemptId!;
+      await expect
+        .poll(async () =>
+          Number(
+            await first
+              .getByRole('status', { name: 'Active solve time' })
+              .textContent()
+              .then((v) => v?.split(':').at(-1)),
+          ),
+        )
+        .toBeGreaterThan(0);
+      await first.reload();
+      await expect(first.getByText('ACTIVE TIME', { exact: true })).toBeVisible();
+      expect((await stateOf(popup)).attempts[attemptId]?.status).toBe('active');
+      await first.getByRole('button', { name: 'Submit', exact: true }).click();
+      await expect(first.getByText('1 submissions', { exact: true })).toBeVisible();
+      if (network) await first.getByLabel('Code editor').fill('exact accepted source');
+      await first.getByRole('button', { name: 'Submit', exact: true }).click();
+      if (network) {
+        await expect
+          .poll(async () =>
+            Object.values((await stateOf(popup)).pendingSubmissions ?? {}).some(
+              (p) => p.submissionId === '1002',
+            ),
+          )
+          .toBe(true);
+        await first.reload();
+      }
+      await expect(first.getByText('How did this feel?')).toBeVisible();
+      let saved = await stateOf(popup);
+      expect(saved.attempts[attemptId]?.status).toBe('accepted');
+      expect(saved.attempts[attemptId]?.submissionCount).toBe(2);
+      expect(saved.attempts[attemptId]?.runningSince).toBeUndefined();
+      if (network)
+        expect(saved.attempts[attemptId]).toMatchObject({
+          code: 'exact accepted source',
+          language: 'Python3',
+          codeProvenance: 'server-verified',
+        });
+      await expect(
+        first.getByRole('button', { name: 'Complete Problem', exact: true }),
+      ).toBeDisabled();
+      await first.getByLabel('Needed help').check();
+      await first.getByLabel(/Hints used/).fill('1');
+      await first.getByRole('button', { name: 'Complete Problem', exact: true }).click();
+      await expect(first.getByRole('heading', { name: 'Problem complete.' })).toBeVisible();
+      saved = await stateOf(popup);
+      expect(saved.progress['striver180:majority-element-i']?.state).toBe('assisted');
+      expect(saved.progress['striver180:majority-element-i']?.revisionDueAt).toBeTruthy();
+      expect(Object.values(saved.activities)[0]?.problemIds).toHaveLength(1);
+      // DOM replay cannot generate another completion.
+      if (!network)
+        await first.locator('[data-testid="submission-result"]').evaluate((el) => {
+          el.textContent = 'Accepted';
+        });
+      expect(Object.values((await stateOf(popup)).activities)[0]?.problemIds).toHaveLength(1);
+      const secondOpened = context.waitForEvent('page');
+      await first.getByRole('button', { name: 'Start Next Problem' }).click();
+      const second = await secondOpened;
+      await second.waitForURL('https://leetcode.com/problems/maximum-subarray/');
+      await second.goto('https://leetcode.com/problems/maximum-subarray/');
+      await second.getByRole('button', { name: 'Start Attempt', exact: true }).click();
+      await expect(second.getByText('ACTIVE TIME', { exact: true })).toBeVisible();
+      await second.getByRole('button', { name: 'Submit', exact: true }).click();
+      await expect(second.getByText('How did this feel?')).toBeVisible();
+      await second.getByLabel('Independent').check();
+      await second.getByRole('button', { name: 'Complete Problem', exact: true }).click();
+      await expect(second.getByText('Today’s target complete. Nicely done.')).toBeVisible();
+      saved = await stateOf(popup);
+      expect(Object.values(saved.activities)[0]?.problemIds).toHaveLength(2);
+      expect(Object.values(saved.attempts).filter((a) => a.status === 'completed')).toHaveLength(2);
+      const dashboard = await context.newPage();
+      await dashboard.setViewportSize({ width: 1440, height: 1100 });
+      await dashboard.goto(`chrome-extension://${id}/dashboard.html#overview`);
+      await expect(
+        dashboard.getByRole('heading', { name: 'Consistency compounds.' }),
+      ).toBeVisible();
+      await dashboard.screenshot({ path: 'test-results/dashboard.png', fullPage: true });
+      await context.close();
+      context = await launch();
+      await fixture(context, network);
+      const restored = await context.newPage();
+      await restored.goto(`chrome-extension://${id}/popup.html`);
+      await expect(restored.getByText('A LITTLE BETTER, EVERY DAY')).toBeVisible();
+      const after = await stateOf(restored);
+      expect(after.attempts).toEqual(saved.attempts);
+      expect(after.progress).toEqual(saved.progress);
+      expect(after.activities).toEqual(saved.activities);
+    } finally {
+      await context.close();
+      await rm(profile, { recursive: true, force: true });
+    }
   });
-  try {
-    await fixture(context);
-    const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
-    const id = new URL(worker.url()).host;
-    const popup = await context.newPage();
-    await popup.goto(`chrome-extension://${id}/popup.html`);
-    await expect(popup.getByRole('spinbutton')).toHaveValue('2');
-    await popup.getByRole('button', { name: 'Start Journey' }).click();
-    await expect(popup.getByRole('heading', { name: 'Majority Element-I' })).toBeVisible();
-    const firstOpened = context.waitForEvent('page');
-    await popup.getByRole('button', { name: 'Start Problem', exact: true }).click();
-    const first = await firstOpened;
-    await first.waitForURL('https://leetcode.com/problems/majority-element/');
-    await first.goto('https://leetcode.com/problems/majority-element/');
-    await first.getByRole('button', { name: 'Start Attempt', exact: true }).click();
-    await expect(first.getByText('ACTIVE TIME', { exact: true })).toBeVisible();
-    const before = await stateOf(popup);
-    const attemptId = before.activeAttemptId!;
-    await expect
-      .poll(async () =>
-        Number(
-          await first
-            .getByRole('status', { name: 'Active solve time' })
-            .textContent()
-            .then((v) => v?.split(':').at(-1)),
-        ),
-      )
-      .toBeGreaterThan(0);
-    await first.reload();
-    await expect(first.getByText('ACTIVE TIME', { exact: true })).toBeVisible();
-    expect((await stateOf(popup)).attempts[attemptId]?.status).toBe('active');
-    await first.getByRole('button', { name: 'Submit', exact: true }).click();
-    await expect(first.getByText('1 submissions', { exact: true })).toBeVisible();
-    await first.getByRole('button', { name: 'Submit', exact: true }).click();
-    await expect(first.getByText('How did this feel?')).toBeVisible();
-    let saved = await stateOf(popup);
-    expect(saved.attempts[attemptId]?.status).toBe('accepted');
-    expect(saved.attempts[attemptId]?.submissionCount).toBe(2);
-    expect(saved.attempts[attemptId]?.runningSince).toBeUndefined();
-    await expect(
-      first.getByRole('button', { name: 'Complete Problem', exact: true }),
-    ).toBeDisabled();
-    await first.getByLabel('Needed help').check();
-    await first.getByLabel(/Hints used/).fill('1');
-    await first.getByRole('button', { name: 'Complete Problem', exact: true }).click();
-    await expect(first.getByRole('heading', { name: 'Problem complete.' })).toBeVisible();
-    saved = await stateOf(popup);
-    expect(saved.progress['striver180:majority-element-i']?.state).toBe('assisted');
-    expect(saved.progress['striver180:majority-element-i']?.revisionDueAt).toBeTruthy();
-    expect(Object.values(saved.activities)[0]?.problemIds).toHaveLength(1);
-    // DOM replay cannot generate another completion.
-    await first.locator('[data-testid="submission-result"]').evaluate((el) => {
-      el.textContent = 'Accepted';
-    });
-    expect(Object.values((await stateOf(popup)).activities)[0]?.problemIds).toHaveLength(1);
-    const secondOpened = context.waitForEvent('page');
-    await first.getByRole('button', { name: 'Start Next Problem' }).click();
-    const second = await secondOpened;
-    await second.waitForURL('https://leetcode.com/problems/maximum-subarray/');
-    await second.goto('https://leetcode.com/problems/maximum-subarray/');
-    await second.getByRole('button', { name: 'Start Attempt', exact: true }).click();
-    await expect(second.getByText('ACTIVE TIME', { exact: true })).toBeVisible();
-    await second.getByRole('button', { name: 'Submit', exact: true }).click();
-    await expect(second.getByText('How did this feel?')).toBeVisible();
-    await second.getByLabel('Independent').check();
-    await second.getByRole('button', { name: 'Complete Problem', exact: true }).click();
-    await expect(second.getByText('Today’s target complete. Nicely done.')).toBeVisible();
-    saved = await stateOf(popup);
-    expect(Object.values(saved.activities)[0]?.problemIds).toHaveLength(2);
-    expect(Object.values(saved.attempts).filter((a) => a.status === 'completed')).toHaveLength(2);
-    const dashboard = await context.newPage();
-    await dashboard.setViewportSize({ width: 1440, height: 1100 });
-    await dashboard.goto(`chrome-extension://${id}/dashboard.html`);
-    await expect(dashboard.getByRole('heading', { name: 'Consistency compounds.' })).toBeVisible();
-    await dashboard.screenshot({ path: 'test-results/dashboard.png', fullPage: true });
-    await context.close();
-    context = await launch();
-    await fixture(context);
-    const restored = await context.newPage();
-    await restored.goto(`chrome-extension://${id}/popup.html`);
-    await expect(restored.getByText('A LITTLE BETTER, EVERY DAY')).toBeVisible();
-    const after = await stateOf(restored);
-    expect(after.attempts).toEqual(saved.attempts);
-    expect(after.progress).toEqual(saved.progress);
-    expect(after.activities).toEqual(saved.activities);
-  } finally {
-    await context.close();
-    await rm(profile, { recursive: true, force: true });
-  }
-});

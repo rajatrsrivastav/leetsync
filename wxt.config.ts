@@ -8,7 +8,8 @@ export default defineConfig({
   vite: () => ({ plugins: [tailwindcss()] }),
   manifest: {
     name: 'DSACommit',
-    description: 'Your next question. Your daily two. A local-first DSA companion.',
+    description:
+      'Track campus preparation, study resources, DSA progress, revisions, and GitHub sync locally.',
     permissions: ['storage', 'alarms'],
     optional_host_permissions: ['https://api.github.com/*'],
     options_ui: { page: 'dashboard.html', open_in_tab: true },

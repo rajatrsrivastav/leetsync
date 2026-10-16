@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { ChevronDown, ChevronUp, Clock3, Code2 } from 'lucide-react';
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
+import { installNetworkCapture } from '../../src/platforms/leetcode/networkCapture';
 import { LeetCodeAdapter } from '../../src/platforms/leetcode/LeetCodeAdapter';
 import { useAppState } from '../../src/hooks/useAppState';
 import { curriculum } from '../../src/domain/curriculum';
@@ -12,7 +13,7 @@ import { openDashboard } from '../../src/services/client';
 import type { AppState } from '../../src/types';
 import '../../src/components/attempt.css';
 
-function TrackedProblemWidget() {
+function TrackedProblemWidget({ network }: { network: ReturnType<typeof installNetworkCapture> }) {
   const { state, error, busy, act } = useAppState();
   const [slug, setSlug] = useState<string>();
   const [collapsed, setCollapsed] = useState(false);
@@ -74,6 +75,10 @@ function TrackedProblemWidget() {
     let delivery = Promise.resolve();
     // This observer remains attached across state polls and timer renders.
     const stop = adapter.observeSubmission((submission) => {
+      if (submission.problemSlug && network.hasPending(submission.problemSlug)) return;
+      // DOM evidence can stop the timer, but editor snapshots are never trusted as accepted source.
+      delete submission.code;
+      delete submission.language;
       const current = latest.current;
       const submitted = submittedAttempt.current;
       submittedAttempt.current = undefined;
@@ -132,8 +137,7 @@ function TrackedProblemWidget() {
       <header
         className="attempt-widget-header"
         onClick={(e) => {
-          if ((e.target as HTMLElement).closest('.attempt-widget-dashboard-btn'))
-            return;
+          if ((e.target as HTMLElement).closest('.attempt-widget-dashboard-btn')) return;
           setCollapsed((prev) => !prev);
         }}
         style={{ cursor: 'pointer', userSelect: 'none' }}
@@ -220,7 +224,14 @@ function resolveProblem(state: AppState | undefined, slug: string, selectedProbl
 export default defineContentScript({
   matches: ['https://leetcode.com/problems/*'],
   cssInjectionMode: 'ui',
+  runAt: 'document_start',
   async main(ctx) {
+    const network = installNetworkCapture();
+    ctx.onInvalidated(() => network.stop());
+    if (!document.body)
+      await new Promise<void>((resolve) =>
+        document.addEventListener('DOMContentLoaded', () => resolve(), { once: true }),
+      );
     const ui = await createShadowRootUi(ctx, {
       name: 'dsacommit-companion',
       position: 'inline',
@@ -228,7 +239,7 @@ export default defineContentScript({
       isolateEvents: true,
       onMount(container) {
         const root = createRoot(container);
-        root.render(<TrackedProblemWidget />);
+        root.render(<TrackedProblemWidget network={network} />);
         return root;
       },
       onRemove(root) {

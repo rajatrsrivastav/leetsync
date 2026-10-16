@@ -14,7 +14,7 @@ const problems: CurriculumProblem[] = ['a', 'b', 'c', 'd'].map((id, index) => ({
 }));
 function fresh(): AppState {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     settings: {
       onboardingComplete: true,
       dailyGoal: 2,

@@ -274,7 +274,12 @@ describe('attempt lifecycle', () => {
       Object.assign(state, activeState());
       state.settings.github.enabled = true;
     });
-    const accepted = { ...submission('ac', 'accepted', 60), code: 'print(1)', language: 'python3' };
+    const accepted = {
+      ...submission('ac', 'accepted', 60),
+      code: 'print(1)',
+      language: 'python3',
+      codeProvenance: 'server-verified' as const,
+    };
     const recorded = await Promise.all(
       [0, 1, 2].map(() =>
         storage.transaction((state) => recordSubmission(state, 'a', accepted, at(60))),

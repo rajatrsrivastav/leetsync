@@ -44,6 +44,13 @@ export function App() {
         <Streak state={state} />
       </header>
       <ErrorBanner message={error} />
+      <button
+        className="button primary"
+        style={{ width: '100%', margin: '12px 0' }}
+        onClick={() => void openDashboard('preparation')}
+      >
+        Campus preparation <ArrowUpRight size={14} />
+      </button>
       <div className="today-heading">
         <span className="eyebrow">A LITTLE BETTER, EVERY DAY</span>
         <strong>

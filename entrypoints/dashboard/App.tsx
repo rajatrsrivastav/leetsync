@@ -1,3 +1,6 @@
+import { PreparationHub } from '../../src/features/preparation/PreparationHub';
+import { PracticeInsights } from '../../src/components/dashboard/PracticeInsights';
+import { BackupPanel } from '../../src/components/BackupPanel';
 import { useEffect, useState } from 'react';
 import {
   ArrowUpRight,
@@ -38,9 +41,9 @@ import { localDate } from '../../src/utils/date';
 import type { CurriculumProblem } from '../../src/types';
 
 function useHash() {
-  const [hash, setHash] = useState(location.hash.slice(1) || 'overview');
+  const [hash, setHash] = useState(location.hash.slice(1) || 'preparation');
   useEffect(() => {
-    const on = () => setHash(location.hash.slice(1) || 'overview');
+    const on = () => setHash(location.hash.slice(1) || 'preparation');
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
@@ -67,7 +70,10 @@ export function App() {
   }, [hash]);
   useEffect(() => {
     const close = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelected(undefined);
+      if (e.key === 'Escape') {
+        setSelected(undefined);
+        if (location.hash.startsWith('#problem/')) openSection('preparation');
+      }
     };
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
@@ -77,6 +83,7 @@ export function App() {
       <div className="main-content">
         <ErrorBanner message={error} />
         <div className="loading">Loading your journey…</div>
+        {error && <BackupPanel act={act} busy={busy} />}
       </div>
     );
   if (!state.settings.onboardingComplete)
@@ -84,6 +91,7 @@ export function App() {
       <div>
         <ErrorBanner message={error} />
         <Onboarding state={state} act={act} busy={busy} />
+        <BackupPanel state={state} act={act} busy={busy} />
       </div>
     );
   const section = hash.startsWith('problem/') ? 'curriculum' : hash,
@@ -101,6 +109,7 @@ export function App() {
   };
   return (
     <div className="app-shell">
+      {state.recoveryNotice && <p role="alert">{state.recoveryNotice}</p>}
       <aside className="sidebar">
         <Brand />
         <span className="eyebrow" style={{ margin: '0 14px 14px', fontSize: 8 }}>
@@ -108,7 +117,8 @@ export function App() {
         </span>
         <nav>
           {[
-            ['overview', 'Overview', LayoutDashboard],
+            ['preparation', 'Campus preparation', Target],
+            ['overview', 'DSA overview', LayoutDashboard],
             ['curriculum', 'Curriculum', BookOpen],
             ['revisions', 'Revisions', RotateCcw],
             ['settings', 'Settings', SettingsIcon],
@@ -132,7 +142,7 @@ export function App() {
         <div className="sidebar-bottom">
           <div className="panel" style={{ padding: 15, marginBottom: 20 }}>
             <span className="eyebrow" style={{ fontSize: 8 }}>
-              THE DAILY COMMITMENT
+              YOUR DSA COMMITMENT
             </span>
             <p style={{ fontSize: 13, color: 'var(--text)', margin: '8px 0' }}>
               A little progress.
@@ -140,7 +150,7 @@ export function App() {
               Every single day.
             </p>
             <div className="flex justify-between small quiet" style={{ margin: '14px 0 8px' }}>
-              <span>Today</span>
+              <span>DSA today</span>
               <span>
                 {stats.todayCompleted} / {todayGoal}
               </span>
@@ -175,7 +185,9 @@ export function App() {
           </div>
         </div>
         <ErrorBanner message={error} />
-        {section === 'overview' ? (
+        {section === 'preparation' ? (
+          <PreparationHub state={state} act={act} busy={busy} />
+        ) : section === 'overview' ? (
           <>
             <div className="page-heading">
               <div>
@@ -229,6 +241,7 @@ export function App() {
                   </div>
                   <ActivityCalendar state={state} />
                 </section>
+                <PracticeInsights state={state} problems={curriculum.getProblems()} />
                 <TopicMasteryPanel
                   topics={stats.topics}
                   onViewCurriculum={() => openSection('curriculum')}
@@ -334,7 +347,10 @@ export function App() {
           act={act}
           busy={busy}
           problem={selected}
-          onClose={() => setSelected(undefined)}
+          onClose={() => {
+            setSelected(undefined);
+            if (hash.startsWith('problem/')) openSection('preparation');
+          }}
         />
       )}
     </div>

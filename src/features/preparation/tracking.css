@@ -1,0 +1,161 @@
+.tracking .panel {
+  margin-bottom: 20px;
+}
+.tracking .prep-header h1 {
+  font-size: 30px;
+}
+.tracking .prep-metrics {
+  margin-bottom: 0;
+}
+.tracking .prep-metrics small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.tracking-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+}
+.tracking-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+}
+.tracking-summary strong {
+  color: var(--accent);
+}
+.tracking-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+  font-size: 12px;
+}
+.tracking-row small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.tracking-row > span:last-child {
+  flex-shrink: 0;
+}
+.tracking-row .button {
+  font-size: 11px;
+  white-space: nowrap;
+  padding: 7px 9px;
+}
+.tracking-goal {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+}
+.tracking-goal input {
+  max-width: 180px;
+}
+.tracking-activity {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(46px, 1fr));
+  gap: 6px;
+}
+.tracking-activity > div {
+  display: grid;
+  gap: 5px;
+  text-align: center;
+  padding: 9px 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+}
+.tracking-activity small {
+  font-size: 10px;
+}
+.tracking-activity .has-activity {
+  color: var(--accent);
+  background: var(--accent-dark);
+}
+.tracking-period {
+  display: flex;
+  gap: 5px;
+}
+.tracking-period button {
+  background: transparent;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+}
+.tracking-period .active {
+  color: var(--accent);
+  background: var(--accent-dark);
+}
+.tracking-resources {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.tracking-resource {
+  align-self: start;
+}
+.tracking-resource h3 {
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+.tracking-resource p {
+  margin: 12px 0;
+}
+.tracking-resource > small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.tracking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.tracking-actions .button {
+  font-size: 11px;
+  padding: 8px 10px;
+}
+.tracking a.button {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.tracking-progress-form {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.tracking-progress-form label {
+  margin-bottom: 14px;
+}
+.tracking details {
+  padding-top: 12px;
+}
+.tracking summary {
+  cursor: pointer;
+  font-size: 13px;
+}
+@media (max-width: 1050px) {
+  .tracking-columns,
+  .tracking-resources {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 620px) {
+  .tracking-row {
+    flex-wrap: wrap;
+  }
+  .tracking .prep-header {
+    align-items: flex-start;
+  }
+  .tracking-goal {
+    flex-wrap: wrap;
+  }
+}

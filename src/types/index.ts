@@ -1,3 +1,4 @@
+import type { PreparationState } from '../features/preparation/types';
 export type Confidence = 'independent' | 'assisted' | 'relearn';
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 export type CurriculumProblem = {
@@ -47,6 +48,11 @@ export type Attempt = {
   spaceComplexity?: string;
   notes?: string;
   completionSource?: 'detected' | 'manual';
+  codeProvenance?: 'server-verified' | 'user-confirmed' | 'legacy-unverified';
+  verifiedSubmissionId?: string;
+  complexityAnalysis?: ComplexityAnalysis;
+  learning?: LearningReflection;
+  hintLevels?: number[];
 };
 export type ProblemProgress = {
   problemId: string;
@@ -89,6 +95,7 @@ export type Settings = {
   };
 };
 export type SyncJob = {
+  destination?: { repository: string; branch: string };
   id: string;
   attemptId: string;
   status: 'pending' | 'syncing' | 'synced' | 'failed';
@@ -98,7 +105,8 @@ export type SyncJob = {
   updatedAt: string;
 };
 export type AppState = {
-  schemaVersion: 1;
+  preparation?: PreparationState;
+  schemaVersion: 2;
   settings: Settings;
   attempts: Record<string, Attempt>;
   progress: ProgressState;
@@ -106,6 +114,9 @@ export type AppState = {
   queues: Record<string, DailyQueue>;
   syncJobs: Record<string, SyncJob>;
   activeAttemptId?: string;
+  revision?: number;
+  recoveryNotice?: string;
+  pendingSubmissions?: Record<string, PendingSubmission>;
 };
 export type Reflection = {
   confidence: Confidence;
@@ -115,6 +126,9 @@ export type Reflection = {
   code?: string;
   language?: string;
   hintsUsed?: number;
+  codeConfirmed?: boolean;
+  complexityAnalysis?: ComplexityAnalysis;
+  learning?: LearningReflection;
 };
 export type Guidance = { pattern?: string; questions?: string[]; strongHint?: string };
 export type SubmissionResult = {
@@ -133,6 +147,8 @@ export type SubmissionResult = {
   code?: string;
   language?: string;
   problemSlug?: string;
+  codeProvenance?: 'server-verified';
+  submittedAt?: string;
 };
 export type CodeSnapshot = {
   code: string;
@@ -140,3 +156,32 @@ export type CodeSnapshot = {
   source: 'submission' | 'editor' | 'manual';
 };
 export type ProblemMetadata = { slug: string; title: string; url: string; difficulty?: Difficulty };
+
+export type ComplexityAnalysis = {
+  method: 'local-heuristic';
+  time?: string;
+  space?: string;
+  reasoning: string[];
+  variables: string[];
+  uncertainty: string[];
+  codeFingerprint: string;
+  reviewed: boolean;
+};
+export type LearningReflection = {
+  invariant?: string;
+  bruteForce?: string;
+  edgeCase?: string;
+  nextTime?: string;
+  mistakes?: string[];
+};
+export type PendingSubmission = {
+  requestId: string;
+  attemptId: string;
+  problemSlug: string;
+  submittedAt: string;
+  submissionId?: string;
+  requestCode?: string;
+  requestLanguage?: string;
+  status: 'waiting' | 'checking' | 'resolved' | 'recovery';
+  lastError?: string;
+};

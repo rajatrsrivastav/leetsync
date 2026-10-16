@@ -1,3 +1,4 @@
+import { codeFingerprint } from '../../services/ComplexityService';
 import type {
   AppState,
   Attempt,
@@ -135,6 +136,9 @@ export function recordSubmission(
     focusReflection(state, a, now);
     if (result.code && result.language) {
       a.code = result.code;
+      a.codeProvenance = result.codeProvenance ?? 'legacy-unverified';
+      if (result.codeProvenance === 'server-verified')
+        a.verifiedSubmissionId = result.id.replace('leetcode:submission:', '');
       a.language = result.language;
     }
   }
@@ -168,6 +172,8 @@ export function completeAttempt(
       reflection.hintsUsed > 999)
   )
     throw new Error('Hint count cannot decrease.');
+  const originalCode = a.code,
+    originalLanguage = a.language;
   for (const key of ['timeComplexity', 'spaceComplexity', 'notes', 'code', 'language'] as const) {
     const value = reflection[key];
     if (
@@ -177,7 +183,29 @@ export function completeAttempt(
       throw new Error('Reflection is too large or invalid.');
     if (value !== undefined) a[key] = value;
   }
-  a.confidence = reflection.confidence;
+  if (reflection.codeConfirmed && a.code?.trim()) a.codeProvenance = 'user-confirmed';
+  else if (a.code !== originalCode || a.language !== originalLanguage)
+    a.codeProvenance = 'legacy-unverified';
+  if (reflection.complexityAnalysis) {
+    const analysis = reflection.complexityAnalysis;
+    if (
+      analysis.method !== 'local-heuristic' ||
+      analysis.codeFingerprint !== codeFingerprint(a.code ?? '', a.language ?? '') ||
+      JSON.stringify(analysis).length > 10000
+    )
+      throw new Error('Analyze the current source again before saving.');
+    a.complexityAnalysis = analysis;
+  }
+  if (reflection.learning) {
+    if (JSON.stringify(reflection.learning).length > 10000)
+      throw new Error('Reflection is too large.');
+    a.learning = reflection.learning;
+  }
+  a.confidence =
+    reflection.confidence === 'independent' &&
+    ((reflection.hintsUsed ?? a.hintsUsed) > 0 || a.editorialViewed || a.solutionViewed)
+      ? 'assisted'
+      : reflection.confidence;
   a.hintsUsed = reflection.hintsUsed ?? a.hintsUsed;
   a.status = 'completed';
   a.completedAt = now.toISOString();
@@ -208,6 +236,7 @@ export function completeAttempt(
     state.settings.github.enabled &&
     state.settings.github.autoCommit &&
     a.code?.trim() &&
+    ['server-verified', 'user-confirmed'].includes(a.codeProvenance ?? '') &&
     a.language
   ) {
     state.syncJobs[id] ??= {
